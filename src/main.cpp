@@ -32,16 +32,63 @@ static const int8_t TFT_DC = 3;
 static const int8_t TFT_RST = 1;
 
 // The display's backlight pin is wired straight to 3V3 (no spare GPIO drives
-// it), so there's no hardware dimming. Instead everything renders into an
-// in-RAM canvas, which lets us scale brightness (or blank to black for
-// "off") in software before pushing each frame out over SPI.
+// it), so there's no hardware dimming. DimmingGFX wraps the real panel and
+// scales every color at the primitive draw calls (writePixelPreclipped,
+// writeFillRectPreclipped, writeFastHLine/VLine, writeLine) before forwarding
+// to it, so brightness/off apply to everything drawn through it without
+// needing a full off-screen framebuffer (an Arduino_Canvas of this size
+// reliably failed to allocate on this ESP32-C3 core and crashed on boot).
+class DimmingGFX : public Arduino_GFX {
+public:
+  DimmingGFX(Arduino_GFX* target)
+    : Arduino_GFX(target->width(), target->height()), _target(target) {}
+
+  bool begin(int32_t speed = GFX_NOT_DEFINED) override { return _target->begin(speed); }
+  void startWrite() override { _target->startWrite(); }
+  void endWrite() override { _target->endWrite(); }
+  void writePixelPreclipped(int16_t x, int16_t y, uint16_t color) override {
+    _target->writePixelPreclipped(x, y, dim(color));
+  }
+  void writeFillRectPreclipped(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) override {
+    _target->writeFillRectPreclipped(x, y, w, h, dim(color));
+  }
+  void writeFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) override {
+    _target->writeFastHLine(x, y, w, dim(color));
+  }
+  void writeFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) override {
+    _target->writeFastVLine(x, y, h, dim(color));
+  }
+  void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) override {
+    _target->writeLine(x0, y0, x1, y1, dim(color));
+  }
+
+  void setOn(bool on) { _on = on; }
+  void setBrightnessPct(uint8_t pct) { _brightnessPct = pct; }
+
+private:
+  Arduino_GFX* _target;
+  bool _on = true;
+  uint8_t _brightnessPct = 100;
+
+  uint16_t dim(uint16_t c) {
+    if (!_on) return 0x0000;
+    if (_brightnessPct >= 100) return c;
+    uint16_t scale = ((uint16_t)_brightnessPct * 256) / 100;
+    uint8_t r = (c >> 11) & 0x1F, g = (c >> 5) & 0x3F, b = c & 0x1F;
+    r = (uint8_t)((r * scale) >> 8);
+    g = (uint8_t)((g * scale) >> 8);
+    b = (uint8_t)((b * scale) >> 8);
+    return (uint16_t)((r << 11) | (g << 5) | b);
+  }
+};
+
 Arduino_DataBus *bus = new Arduino_ESP32SPI(TFT_DC, TFT_CS, TFT_SCLK, TFT_MOSI, GFX_NOT_DEFINED);
 Arduino_GC9A01 *panel = new Arduino_GC9A01(bus, TFT_RST, 0 /* rotation */, true /* IPS */);
-Arduino_Canvas *gfx = new Arduino_Canvas(240, 240, panel);
+DimmingGFX *gfx = new DimmingGFX(panel);
 
 // ---- Display power: on/off, brightness, and a weekday/weekend schedule ----
 // There's no spare GPIO on the backlight, so "brightness" and "off" are both
-// done in software against the canvas framebuffer (see pushFrame() below).
+// applied by DimmingGFX (see above) rather than in hardware.
 bool displayOn = true;
 uint8_t displayBrightnessPct = 100; // 5-100
 
@@ -74,26 +121,13 @@ void centerText(const char* text, int16_t cx, int16_t cy, uint8_t size, const GF
   gfx->print(text);
 }
 
-// Scales the just-drawn frame to the current brightness (or blanks it if the
-// display is "off") and pushes it out over SPI. Every render path ends by
-// calling this instead of writing straight to the panel.
-void pushFrame() {
-  uint16_t* fb = gfx->getFramebuffer();
-  const size_t pixelCount = (size_t)240 * 240;
-  if (!displayOn) {
-    memset(fb, 0, pixelCount * sizeof(uint16_t));
-  } else if (displayBrightnessPct < 100) {
-    uint16_t scale = ((uint16_t)displayBrightnessPct * 256) / 100;
-    for (size_t i = 0; i < pixelCount; i++) {
-      uint16_t c = fb[i];
-      uint8_t r = (c >> 11) & 0x1F, g = (c >> 5) & 0x3F, b = c & 0x1F;
-      r = (uint8_t)((r * scale) >> 8);
-      g = (uint8_t)((g * scale) >> 8);
-      b = (uint8_t)((b * scale) >> 8);
-      fb[i] = (uint16_t)((r << 11) | (g << 5) | b);
-    }
-  }
-  gfx->flush();
+// Pushes the current on/off + brightness settings into the DimmingGFX layer.
+// Call whenever either changes; the next draw calls pick it up immediately
+// (existing on-screen pixels aren't retroactively changed, so pair this with
+// a renderCurrentScreen() to refresh what's currently shown).
+void applyDisplayPower() {
+  gfx->setOn(displayOn);
+  gfx->setBrightnessPct(displayBrightnessPct);
 }
 
 static const unsigned long UPDATE_INTERVAL_MS = 10UL * 60UL * 1000UL; // 10 minutes
@@ -897,7 +931,6 @@ void renderCurrentScreen() {
     if (idx >= (int)notes.size()) idx = 0;
     renderNote(notes[idx], idx, notes.size());
   }
-  pushFrame();
 }
 
 // ---------------------------------------------------------------------------
@@ -1054,6 +1087,7 @@ void handleApiSettings() {
       long b = power["brightness"].as<long>();
       displayBrightnessPct = (uint8_t)constrain(b, 5L, 100L);
     }
+    applyDisplayPower();
     JsonVariant vSched = power["schedule"];
     if (!vSched.isNull()) {
       JsonObject sched = vSched.as<JsonObject>();
@@ -1133,12 +1167,13 @@ void tickPowerSchedule() {
   if (!scheduleInitialized) {
     scheduleInitialized = true;
     lastScheduledOn = shouldBeOn;
-    if (displayOn != shouldBeOn) { displayOn = shouldBeOn; renderCurrentScreen(); }
+    if (displayOn != shouldBeOn) { displayOn = shouldBeOn; applyDisplayPower(); renderCurrentScreen(); }
     return;
   }
   if (shouldBeOn != lastScheduledOn) {
     lastScheduledOn = shouldBeOn;
     displayOn = shouldBeOn;
+    applyDisplayPower();
     renderCurrentScreen();
   }
 }
@@ -1153,19 +1188,18 @@ void setup() {
 
   gfx->setTextColor(INK, CARD_BG);
   centerText("Connecting WiFi...", 120, 116, 1, &FreeSans9pt7b);
-  pushFrame();
 
   prefs.begin("notes", false);
   loadNotes();
 
   settingsPrefs.begin("settings", false);
   loadSettings();
+  applyDisplayPower();
 
   connectWiFi();
 
   if (WiFi.status() == WL_CONNECTED) {
     centerText("Locating...", 120, 144, 1, &FreeSans9pt7b);
-    pushFrame();
 
     configTime(0, 0, "pool.ntp.org", "time.nist.gov"); // UTC; local offset comes from Open-Meteo per-fetch
 
