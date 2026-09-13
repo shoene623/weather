@@ -1,0 +1,52 @@
+********************************************************************************
+Obsolete PIO Core v6.1.19 is used (previous was 6.2.0)
+Please remove multiple PIO Cores from a system:
+https://docs.platformio.org/en/latest/core/installation/troubleshooting.html
+********************************************************************************
+Processing esp32-c3-supermini (platform: espressif32; board: esp32-c3-devkitm-1; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32-c3-devkitm-1.html
+PLATFORM: Espressif 32 (55.3.39) > Espressif ESP32-C3-DevKitM-1
+HARDWARE: ESP32C3 160MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-builtin, esp-prog, esp-prog-2, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - contrib-piohome @ 3.4.4 
+ - framework-arduinoespressif32 @ 3.3.9 
+ - framework-arduinoespressif32-libs @ 5.5.4+sha.735507283d 
+ - tool-esptoolpy @ 5.3.0 
+ - tool-riscv32-esp-elf-gdb @ 17.1.0+20260402 
+ - toolchain-riscv32-esp @ 14.2.0+20260121
+*** WARNING: Windows Long Path Support is disabled ***
+*** Enable it for better performance: ***
+*** 1. Run as Administrator: gpedit.msc ***
+*** 2. Navigate to: Computer Configuration > Administrative Templates > System > Filesystem ***
+*** 3. Enable 'Enable Win32 long paths' ***
+*** OR run PowerShell as Admin: ***
+*** New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force ***
+*** Restart required after enabling ***
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 47 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- GFX Library for Arduino @ 1.6.7
+|-- ArduinoJson @ 7.4.3
+|-- Adafruit GFX Library @ 1.12.6
+|-- ESPmDNS @ 3.3.9
+|-- HTTPClient @ 3.3.9
+|-- Preferences @ 3.3.9
+|-- WebServer @ 3.3.9
+|-- WiFi @ 3.3.9
+|-- NetworkClientSecure @ 3.3.9
+Building in release mode
+Compiling .pio\build\esp32-c3-supermini\src\main.cpp.o
+src/main.cpp: In function 'void pushFrame()':
+src/main.cpp:58:8: error: 'displayOn' was not declared in this scope
+   58 |   if (!displayOn) {
+      |        ^~~~~~~~~
+src/main.cpp:60:14: error: 'displayBrightnessPct' was not declared in this scope
+   60 |   } else if (displayBrightnessPct < 100) {
+      |              ^~~~~~~~~~~~~~~~~~~~
+*** [.pio\build\esp32-c3-supermini\src\main.cpp.o] Error 1
+========================= [FAILED] Took 73.43 seconds =========================

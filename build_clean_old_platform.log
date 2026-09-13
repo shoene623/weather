@@ -1,0 +1,141 @@
+********************************************************************************
+Obsolete PIO Core v6.1.19 is used (previous was 6.2.0)
+Please remove multiple PIO Cores from a system:
+https://docs.platformio.org/en/latest/core/installation/troubleshooting.html
+********************************************************************************
+Processing esp32-c3-supermini (platform: espressif32@6.9.0; board: esp32-c3-devkitm-1; framework: arduino)
+--------------------------------------------------------------------------------
+Tool Manager: Installing platformio/framework-arduinoespressif32 @ ~3.20017.0
+Unpacking 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Tool Manager: framework-arduinoespressif32@3.20017.241212+sha.dcc1105b has been installed!
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32-c3-devkitm-1.html
+PLATFORM: Espressif 32 (6.9.0) > Espressif ESP32-C3-DevKitM-1
+HARDWARE: ESP32C3 160MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-builtin, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - framework-arduinoespressif32 @ 3.20017.241212+sha.dcc1105b 
+ - tool-esptoolpy @ 1.40501.0 (4.5.1) 
+ - toolchain-riscv32-esp @ 8.4.0+2021r2-patch5
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 36 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- TFT_eSPI @ 2.5.43+sha.16e3759
+|-- ArduinoJson @ 7.4.3
+|-- HTTPClient @ 2.0.0
+|-- WiFi @ 2.0.0
+|-- WiFiClientSecure @ 2.0.0
+Building in release mode
+Compiling .pio\build\esp32-c3-supermini\src\main.cpp.o
+Building .pio\build\esp32-c3-supermini\bootloader.bin
+Generating partitions .pio\build\esp32-c3-supermini\partitions.bin
+Compiling .pio\build\esp32-c3-supermini\lib2d5\SPI\SPI.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib2e4\FS\FS.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib2e4\FS\vfs_api.cpp.o
+Compiling .pio\build\esp32-c3-supermini\libc54\SPIFFS\SPIFFS.cpp.o
+Compiling .pio\build\esp32-c3-supermini\libeff\LittleFS\LittleFS.cpp.o
+esptool.py v4.5.1
+Creating esp32c3 image...
+Merged 1 ELF section
+Successfully created esp32c3 image.
+Compiling .pio\build\esp32-c3-supermini\libb46\TFT_eSPI\TFT_eSPI.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFi.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFiAP.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFiClient.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFiGeneric.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFiMulti.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFiSTA.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFiScan.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFiServer.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib636\WiFi\WiFiUdp.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib8a6\WiFiClientSecure\WiFiClientSecure.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib8a6\WiFiClientSecure\esp_crt_bundle.c.o
+Compiling .pio\build\esp32-c3-supermini\lib8a6\WiFiClientSecure\ssl_client.cpp.o
+Compiling .pio\build\esp32-c3-supermini\lib301\HTTPClient\HTTPClient.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\Esp.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\FirmwareMSC.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\FunctionalInterrupt.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\HWCDC.cpp.o
+Archiving .pio\build\esp32-c3-supermini\lib2d5\libSPI.a
+In file included from .pio/libdeps/esp32-c3-supermini/TFT_eSPI/TFT_eSPI.h:99,
+                 from src/main.cpp:2:
+.pio/libdeps/esp32-c3-supermini/TFT_eSPI/Processors/TFT_eSPI_ESP32_C3.h:11:3: warning: #warning >>>>------>> DMA is not supported on the ESP32 C3 or C6 (possible future update) [-Wcpp]
+  #warning >>>>------>> DMA is not supported on the ESP32 C3 or C6 (possible future update)
+   ^~~~~~~
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\HardwareSerial.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\IPAddress.cpp.o
+In file included from src/main.cpp:2:
+.pio/libdeps/esp32-c3-supermini/TFT_eSPI/TFT_eSPI.h:973:8: warning: #warning >>>>------>> TOUCH_CS pin not defined, TFT_eSPI touch functions will not be available! [-Wcpp]
+       #warning >>>>------>> TOUCH_CS pin not defined, TFT_eSPI touch functions will not be available!
+        ^~~~~~~
+Archiving .pio\build\esp32-c3-supermini\lib2e4\libFS.a
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\IPv6Address.cpp.o
+Archiving .pio\build\esp32-c3-supermini\libc54\libSPIFFS.a
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\MD5Builder.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\Print.cpp.o
+Archiving .pio\build\esp32-c3-supermini\libeff\libLittleFS.a
+In file included from .pio/libdeps/esp32-c3-supermini/TFT_eSPI/TFT_eSPI.h:99,
+                 from .pio/libdeps/esp32-c3-supermini/TFT_eSPI/TFT_eSPI.cpp:16:
+.pio/libdeps/esp32-c3-supermini/TFT_eSPI/Processors/TFT_eSPI_ESP32_C3.h:11:3: warning: #warning >>>>------>> DMA is not supported on the ESP32 C3 or C6 (possible future update) [-Wcpp]
+  #warning >>>>------>> DMA is not supported on the ESP32 C3 or C6 (possible future update)
+   ^~~~~~~
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\Stream.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\StreamString.cpp.o
+In file included from .pio/libdeps/esp32-c3-supermini/TFT_eSPI/TFT_eSPI.cpp:16:
+.pio/libdeps/esp32-c3-supermini/TFT_eSPI/TFT_eSPI.h:973:8: warning: #warning >>>>------>> TOUCH_CS pin not defined, TFT_eSPI touch functions will not be available! [-Wcpp]
+       #warning >>>>------>> TOUCH_CS pin not defined, TFT_eSPI touch functions will not be available!
+        ^~~~~~~
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\Tone.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\USB.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\USBCDC.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\USBMSC.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\WMath.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\WString.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\base64.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\cbuf.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-adc.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-bt.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-cpu.c.o
+Archiving .pio\build\esp32-c3-supermini\lib636\libWiFi.a
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-dac.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-gpio.c.o
+Archiving .pio\build\esp32-c3-supermini\libb46\libTFT_eSPI.a
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-i2c-slave.c.o
+Archiving .pio\build\esp32-c3-supermini\lib8a6\libWiFiClientSecure.a
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-i2c.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-ledc.c.o
+Archiving .pio\build\esp32-c3-supermini\lib301\libHTTPClient.a
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-matrix.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-misc.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-psram.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-rgb-led.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-rmt.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-sigmadelta.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-spi.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-time.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-timer.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-tinyusb.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-touch.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\esp32-hal-uart.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\firmware_msc_fat.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\libb64\cdecode.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\libb64\cencode.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\main.cpp.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\stdlib_noniso.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\wiring_pulse.c.o
+Compiling .pio\build\esp32-c3-supermini\FrameworkArduino\wiring_shift.c.o
+Archiving .pio\build\esp32-c3-supermini\libFrameworkArduino.a
+Linking .pio\build\esp32-c3-supermini\firmware.elf
+Retrieving maximum program size .pio\build\esp32-c3-supermini\firmware.elf
+Checking size .pio\build\esp32-c3-supermini\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]  12.3% (used 40260 bytes from 327680 bytes)
+Flash: [=======   ]  71.0% (used 930146 bytes from 1310720 bytes)
+Building .pio\build\esp32-c3-supermini\firmware.bin
+esptool.py v4.5.1
+Creating esp32c3 image...
+Merged 2 ELF sections
+Successfully created esp32c3 image.
+======================== [SUCCESS] Took 124.51 seconds ========================

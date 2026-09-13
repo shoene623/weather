@@ -1,0 +1,120 @@
+********************************************************************************
+Obsolete PIO Core v6.1.19 is used (previous was 6.2.0)
+Please remove multiple PIO Cores from a system:
+https://docs.platformio.org/en/latest/core/installation/troubleshooting.html
+********************************************************************************
+Processing esp32-c3-supermini (platform: espressif32; board: esp32-c3-devkitm-1; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32-c3-devkitm-1.html
+PLATFORM: Espressif 32 (55.3.39) > Espressif ESP32-C3-DevKitM-1
+HARDWARE: ESP32C3 160MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-builtin, esp-prog, esp-prog-2, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - contrib-piohome @ 3.4.4 
+ - framework-arduinoespressif32 @ 3.3.9 
+ - framework-arduinoespressif32-libs @ 5.5.4+sha.735507283d 
+ - tool-esptoolpy @ 5.3.0 
+ - tool-riscv32-esp-elf-gdb @ 17.1.0+20260402 
+ - toolchain-riscv32-esp @ 14.2.0+20260121
+*** WARNING: Windows Long Path Support is disabled ***
+*** Enable it for better performance: ***
+*** 1. Run as Administrator: gpedit.msc ***
+*** 2. Navigate to: Computer Configuration > Administrative Templates > System > Filesystem ***
+*** 3. Enable 'Enable Win32 long paths' ***
+*** OR run PowerShell as Admin: ***
+*** New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force ***
+*** Restart required after enabling ***
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 47 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- GFX Library for Arduino @ 1.6.7
+|-- ArduinoJson @ 7.4.3
+|-- Adafruit GFX Library @ 1.12.6
+|-- ESPmDNS @ 3.3.9
+|-- HTTPClient @ 3.3.9
+|-- Preferences @ 3.3.9
+|-- WebServer @ 3.3.9
+|-- WiFi @ 3.3.9
+|-- NetworkClientSecure @ 3.3.9
+Building in release mode
+Compiling .pio\build\esp32-c3-supermini\src\main.cpp.o
+Linking .pio\build\esp32-c3-supermini\firmware.elf
+Firmware metrics can not be shown. Set the terminal codepage to "utf-8" or "cp65001" on Windows.
+Retrieving maximum program size .pio\build\esp32-c3-supermini\firmware.elf
+Checking size .pio\build\esp32-c3-supermini\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]  12.7% (used 41708 bytes from 327680 bytes)
+Flash: [====      ]  42.0% (used 1321045 bytes from 3145728 bytes)
+Building .pio\build\esp32-c3-supermini\firmware.bin
+esptool v5.3.0
+Creating ESP32-C3 image...
+Merged 2 ELF sections.
+Successfully created ESP32-C3 image.
+Creating binary "firmware.factory.bin" with:
+    Offset   | File
+ -  0x0000   | bootloader.bin
+ -  0x8000   | partitions.bin
+ -  0xe000   | boot_app0.bin
+ -  0x10000  | firmware.bin
+Successfully created combined binary image.
+Configuring upload protocol...
+AVAILABLE: cmsis-dap, esp-bridge, esp-builtin, esp-prog, esp-prog-2, espota, esptool, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa
+CURRENT: upload_protocol = esptool
+Looking for upload port...
+Uploading .pio\build\esp32-c3-supermini\firmware.bin
+esptool v5.3.0
+Serial port COM3:
+Connecting...
+Connected to ESP32-C3 on COM3:
+Chip type:          ESP32-C3 (QFN32) (revision v0.4)
+Features:           Wi-Fi, BT 5 (LE), Single Core, 160MHz, Embedded Flash 4MB (XMC)
+Crystal frequency:  40MHz
+USB mode:           USB-Serial/JTAG
+MAC:                9c:cc:01:7c:35:84
+
+Uploading stub flasher...
+Running stub flasher...
+Stub flasher running.
+Changing baud rate to 460800...
+Changed.
+
+Configuring flash size...
+Auto-detected flash size: 4MB
+
+Writing 'C:\Users\SHoene\Documents\PlatformIO\Projects\weather\.pio\build\esp32-c3-supermini\bootloader.bin' at 0x00000000...
+SHA digest in image updated.
+Flash will be erased from 0x00000000 to 0x00004fff...
+Compressed 19520 bytes to 12705...
+
+Exception in thread Thread-16 (run):
+Traceback (most recent call last):
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\site-packages\platformio\proc.py", line 48, in run
+    self.do_reading()
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\site-packages\platformio\proc.py", line 103, in do_reading
+    self.line_callback(line)
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\site-packages\platformio\platform\_run.py", line 138, in _on_stdout_line
+    self._echo_line(line, level=1)
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\site-packages\platformio\platform\_run.py", line 159, in _echo_line
+    click.secho(line, fg=fg, err=level > 1, nl=False)
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\site-packages\platformio\__main__.py", line 90, in <lambda>
+    click.secho = lambda *args, **kwargs: _safe_echo(1, *args, **kwargs)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\site-packages\platformio\__main__.py", line 83, in _safe_echo
+    click_echo_origin[origin](*args, **kwargs)
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\site-packages\click\termui.py", line 698, in secho
+    return echo(message, file=file, nl=nl, err=err, color=color)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\site-packages\click\utils.py", line 324, in echo
+    file.write(out)  # type: ignore
+    ^^^^^^^^^^^^^^^
+  File "C:\Users\SHoene\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 23-52: character maps to <undefined>

@@ -1,0 +1,913 @@
+﻿Processing esp32-c3-supermini (platform: espressif32; board: esp32-c3-devkitm-1; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32-c3-devkitm-1.html
+PLATFORM: Espressif 32 (55.3.39) > Espressif ESP32-C3-DevKitM-1
+HARDWARE: ESP32C3 160MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-builtin, esp-prog, esp-prog-2, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - contrib-piohome @ 3.4.4 
+ - framework-arduinoespressif32 @ 3.3.9 
+ - framework-arduinoespressif32-libs @ 5.5.4+sha.735507283d 
+ - tool-esptoolpy @ 5.3.0 
+ - tool-riscv32-esp-elf-gdb @ 17.1.0+20260402 
+ - toolchain-riscv32-esp @ 14.2.0+20260121
+*** WARNING: Windows Long Path Support is disabled ***
+*** Enable it for better performance: ***
+*** 1. Run as Administrator: gpedit.msc ***
+*** 2. Navigate to: Computer Configuration > Administrative Templates > System > Filesystem ***
+*** 3. Enable 'Enable Win32 long paths' ***
+*** OR run PowerShell as Admin: ***
+*** New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force ***
+*** Restart required after enabling ***
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 45 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- GFX Library for Arduino @ 1.6.7
+|-- ArduinoJson @ 7.4.3
+|-- HTTPClient @ 3.3.9
+|-- WiFi @ 3.3.9
+|-- NetworkClientSecure @ 3.3.9
+Building in release mode
+Retrieving maximum program size .pio\build\esp32-c3-supermini\firmware.elf
+Checking size .pio\build\esp32-c3-supermini\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]  11.8% (used 38668 bytes from 327680 bytes)
+Flash: [========= ]  90.0% (used 1179409 bytes from 1310720 bytes)
+Configuring upload protocol...
+AVAILABLE: cmsis-dap, esp-bridge, esp-builtin, esp-prog, esp-prog-2, espota, esptool, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa
+CURRENT: upload_protocol = esptool
+Looking for upload port...
+Uploading .pio\build\esp32-c3-supermini\firmware.bin
+esptool v5.3.0
+Serial port COM3:
+Connecting...
+Connected to ESP32-C3 on COM3:
+Chip type:          ESP32-C3 (QFN32) (revision v0.4)
+Features:           Wi-Fi, BT 5 (LE), Single Core, 160MHz, Embedded Flash 4MB (XMC)
+Crystal frequency:  40MHz
+USB mode:           USB-Serial/JTAG
+MAC:                9c:cc:01:7c:35:84
+
+Uploading stub flasher...
+Running stub flasher...
+Stub flasher running.
+Changing baud rate to 460800...
+Changed.
+
+Configuring flash size...
+Auto-detected flash size: 4MB
+
+Writing 'C:\Users\SHoene\Documents\PlatformIO\Projects\weather\.pio\build\esp32-c3-supermini\bootloader.bin' at 0x00000000...
+SHA digest in image updated.
+Flash will be erased from 0x00000000 to 0x00004fff...
+Compressed 19520 bytes to 12705...
+
+Writing at 0x00000000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/12705 bytes... 
+
+Writing at 0x00004c40 [██████████████████████████████] 100.0% 12705/12705 bytes... 
+Wrote 19520 bytes (12705 compressed) at 0x00000000 in 0.2 seconds (1038.0 kbit/s).
+Verifying written data...
+Hash of data verified.
+
+Writing 'C:\Users\SHoene\Documents\PlatformIO\Projects\weather\.pio\build\esp32-c3-supermini\partitions.bin' at 0x00008000...
+Flash will be erased from 0x00008000 to 0x00008fff...
+Compressed 3072 bytes to 146...
+
+Writing at 0x00008000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/146 bytes... 
+
+Writing at 0x00008c00 [██████████████████████████████] 100.0% 146/146 bytes... 
+Wrote 3072 bytes (146 compressed) at 0x00008000 in 0.0 seconds (3171.2 kbit/s).
+Verifying written data...
+Hash of data verified.
+
+Writing 'C:\Users\SHoene\.platformio\packages\framework-arduinoespressif32\tools\partitions\boot_app0.bin' at 0x0000e000...
+Flash will be erased from 0x0000e000 to 0x0000ffff...
+Compressed 8192 bytes to 47...
+
+Writing at 0x0000e000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/47 bytes... 
+
+Writing at 0x00010000 [██████████████████████████████] 100.0% 47/47 bytes... 
+Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (2031.3 kbit/s).
+Verifying written data...
+Hash of data verified.
+
+Writing '.pio\build\esp32-c3-supermini\firmware.bin' at 0x00010000...
+Flash will be erased from 0x00010000 to 0x00139fff...
+Compressed 1217168 bytes to 734382...
+
+Writing at 0x00010000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/734382 bytes... 
+
+Writing at 0x0001d482 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   2.2% 16384/734382 bytes... 
+
+Writing at 0x0002aec7 [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   4.5% 32768/734382 bytes... 
+
+Writing at 0x000345c5 [██░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   6.7% 49152/734382 bytes... 
+
+Writing at 0x0003c510 [██░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   8.9% 65536/734382 bytes... 
+
+Writing at 0x00046cb8 [███░░░░░░░░░░░░░░░░░░░░░░░░░░░]  11.2% 81920/734382 bytes... 
+
+Writing at 0x0004cd5a [████░░░░░░░░░░░░░░░░░░░░░░░░░░]  13.4% 98304/734382 bytes... 
+
+Writing at 0x00053430 [████░░░░░░░░░░░░░░░░░░░░░░░░░░]  15.6% 114688/734382 bytes... 
+
+Writing at 0x00059f48 [█████░░░░░░░░░░░░░░░░░░░░░░░░░]  17.8% 131072/734382 bytes... 
+
+Writing at 0x00060352 [██████░░░░░░░░░░░░░░░░░░░░░░░░]  20.1% 147456/734382 bytes... 
+
+Writing at 0x0006648e [██████░░░░░░░░░░░░░░░░░░░░░░░░]  22.3% 163840/734382 bytes... 
+
+Writing at 0x0006db57 [███████░░░░░░░░░░░░░░░░░░░░░░░]  24.5% 180224/734382 bytes... 
+
+Writing at 0x00073bbc [████████░░░░░░░░░░░░░░░░░░░░░░]  26.8% 196608/734382 bytes... 
+
+Writing at 0x0007a21a [████████░░░░░░░░░░░░░░░░░░░░░░]  29.0% 212992/734382 bytes... 
+
+Writing at 0x00080501 [█████████░░░░░░░░░░░░░░░░░░░░░]  31.2% 229376/734382 bytes... 
+
+Writing at 0x00086498 [██████████░░░░░░░░░░░░░░░░░░░░]  33.5% 245760/734382 bytes... 
+
+Writing at 0x0008c791 [██████████░░░░░░░░░░░░░░░░░░░░]  35.7% 262144/734382 bytes... 
+
+Writing at 0x0009276b [███████████░░░░░░░░░░░░░░░░░░░]  37.9% 278528/734382 bytes... 
+
+Writing at 0x0009883a [████████████░░░░░░░░░░░░░░░░░░]  40.2% 294912/734382 bytes... 
+
+Writing at 0x0009e9dc [████████████░░░░░░░░░░░░░░░░░░]  42.4% 311296/734382 bytes... 
+
+Writing at 0x000a42cd [█████████████░░░░░░░░░░░░░░░░░]  44.6% 327680/734382 bytes... 
+
+Writing at 0x000a9c01 [██████████████░░░░░░░░░░░░░░░░]  46.9% 344064/734382 bytes... 
+
+Writing at 0x000af517 [██████████████░░░░░░░░░░░░░░░░]  49.1% 360448/734382 bytes... 
+
+Writing at 0x000b5052 [███████████████░░░░░░░░░░░░░░░]  51.3% 376832/734382 bytes... 
+
+Writing at 0x000bb6d1 [████████████████░░░░░░░░░░░░░░]  53.5% 393216/734382 bytes... 
+
+Writing at 0x000c0d2f [████████████████░░░░░░░░░░░░░░]  55.8% 409600/734382 bytes... 
+
+Writing at 0x000c65a5 [█████████████████░░░░░░░░░░░░░]  58.0% 425984/734382 bytes... 
+
+Writing at 0x000cc0c5 [██████████████████░░░░░░░░░░░░]  60.2% 442368/734382 bytes... 
+
+Writing at 0x000d244f [██████████████████░░░░░░░░░░░░]  62.5% 458752/734382 bytes... 
+
+Writing at 0x000d7e9e [███████████████████░░░░░░░░░░░]  64.7% 475136/734382 bytes... 
+
+Writing at 0x000dd659 [████████████████████░░░░░░░░░░]  66.9% 491520/734382 bytes... 
+
+Writing at 0x000e37c4 [████████████████████░░░░░░░░░░]  69.2% 507904/734382 bytes... 
+
+Writing at 0x000e9187 [█████████████████████░░░░░░░░░]  71.4% 524288/734382 bytes... 
+
+Writing at 0x000ef5a8 [██████████████████████░░░░░░░░]  73.6% 540672/734382 bytes... 
+
+Writing at 0x000f5ac2 [██████████████████████░░░░░░░░]  75.9% 557056/734382 bytes... 
+
+Writing at 0x000fbc33 [███████████████████████░░░░░░░]  78.1% 573440/734382 bytes... 
+
+Writing at 0x00101dba [████████████████████████░░░░░░]  80.3% 589824/734382 bytes... 
+
+Writing at 0x00107ddf [████████████████████████░░░░░░]  82.5% 606208/734382 bytes... 
+
+Writing at 0x0010e1be [█████████████████████████░░░░░]  84.8% 622592/734382 bytes... 
+
+Writing at 0x00114126 [██████████████████████████░░░░]  87.0% 638976/734382 bytes... 
+
+Writing at 0x0011a1aa [██████████████████████████░░░░]  89.2% 655360/734382 bytes... 
+
+Writing at 0x00122004 [███████████████████████████░░░]  91.5% 671744/734382 bytes... 
+
+Writing at 0x001275c6 [████████████████████████████░░]  93.7% 688128/734382 bytes... 
+
+Writing at 0x0012dd14 [████████████████████████████░░]  95.9% 704512/734382 bytes... 
+
+Writing at 0x00134025 [█████████████████████████████░]  98.2% 720896/734382 bytes... 
+
+Writing at 0x00139290 [██████████████████████████████] 100.0% 734382/734382 bytes... 
+Wrote 1217168 bytes (734382 compressed) at 0x00010000 in 4.1 seconds (2380.2 kbit/s).
+Verifying written data...
+Hash of data verified.
+
+Hard resetting via RTS pin...
+--- Terminal on COM3 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+Booting...
+Calling gfx->begin()...
+gfx->begin() returned
+fillScreen done
+drawString done
+Connecting to WiFi "The Guest Family"...........
+WiFi connected, IP=192.168.0.19
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+Failed to discover observation station
+Setup complete
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+JSON parse failed for https://api.weather.gov/gridpoints/JAX/76,62/stations: IncompleteInput
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
+GET https://api.weather.gov/points/30.2419,-81.3901 -> code=200
+Parsed doc: {"properties":{"observationStations":"https://api.weather.gov/gridpoints/JAX/76,62/stations"}}
+GET https://api.weather.gov/gridpoints/JAX/76,62/stations -> code=200
+Parsed doc: null
