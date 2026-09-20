@@ -1,3 +1,7 @@
 .pio/
 .vscode/
 src/secrets.h
+local-sensor/.pio/
+local-sensor/src/secrets.h
+air-quality/.pio/
+air-quality/src/secrets.h

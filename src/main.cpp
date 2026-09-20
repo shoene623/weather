@@ -131,6 +131,8 @@ void applyDisplayPower() {
 }
 
 static const unsigned long UPDATE_INTERVAL_MS = 10UL * 60UL * 1000UL; // 10 minutes
+static const unsigned long LOCAL_SENSOR_INTERVAL_MS = 60UL * 1000UL; // 1 minute; local + cheap, no rate limit to worry about
+static const unsigned long AIR_QUALITY_INTERVAL_MS = 60UL * 1000UL; // same cadence as the local sensor poll
 
 // ---- Location + unit settings (persisted, editable from the web UI) ----
 String zipCode = "32082"; // Ponte Vedra Beach, FL
@@ -138,6 +140,8 @@ String latLon;            // resolved from zipCode at boot / whenever it changes
 String placeName;         // resolved city name, e.g. "Ponte Vedra Beach"
 bool useFahrenheit = false;
 unsigned long screenCycleMs = 5000;
+String localSensorHost = "localsensor.local"; // AHT20+BMP280 node's mDNS hostname or IP
+String airQualityHost = "airquality.local";   // PMS5003 node's mDNS hostname or IP
 Preferences settingsPrefs;
 
 // ---- Which stats show on the round display (web UI can pick up to 4) ----
@@ -195,6 +199,10 @@ void clampDisplayToggles() {
   }
 }
 
+static const int HOURLY_COUNT = 4; // shown at +3h, +6h, +9h, +12h from now
+static const int DAILY_COUNT = 5;  // today + next 4 days
+static const int NUM_FIXED_SCREENS = 5; // 0=weather, 1=hourly, 2=5-day, 3=local sensor, 4=air quality; notes follow
+
 struct WeatherData {
   float temperatureC = NAN;
   float feelsLikeC = NAN;
@@ -209,11 +217,58 @@ struct WeatherData {
   int weatherCode = -1;
   bool isDay = true;
   String condition;
+
+  struct HourPoint {
+    float tempC = NAN;
+    int code = -1;
+    bool isDay = true;
+    int hourOfDay = 0; // 0-23, local
+  };
+  HourPoint hourly[HOURLY_COUNT];
+
+  struct DayPoint {
+    float highC = NAN;
+    float lowC = NAN;
+    int code = -1;
+    int weekday = 0; // 0=Sun..6=Sat
+  };
+  DayPoint daily[DAILY_COUNT];
 };
 
 WeatherData currentWeather;
 bool haveData = false;
 unsigned long lastFetchMs = 0;
+
+// ---- Local sensor (AHT20+BMP280 node), fetched from its own tiny HTTP API ----
+struct LocalSensorReading {
+  float tempC = NAN;
+  float humidityPct = NAN;
+  float pressureHpa = NAN;
+  bool online = false;
+  // Cached Supabase forecast (pressure-history-based rain likelihood), as
+  // last relayed by the sensor node's own /data response. Not always
+  // present -- the node only has this once it's posted enough telemetry.
+  bool haveForecast = false;
+  String forecastState;
+  int rainProbabilityPct = -1;
+  String pressureTrend;
+};
+LocalSensorReading localSensor;
+bool haveLocalSensor = false;
+unsigned long lastLocalFetchMs = 0;
+
+// ---- Air quality (PMS5003 particulate node), fetched the same way ----
+struct AirQualityReading {
+  bool online = false;
+  int pm1_0 = 0;   // ug/m3, atmospheric
+  int pm2_5 = 0;   // ug/m3, atmospheric
+  int pm10 = 0;    // ug/m3, atmospheric
+  int aqi = -1;    // US EPA PM2.5 AQI, as computed by the node
+  String aqiCategory;
+};
+AirQualityReading airQuality;
+bool haveAirQuality = false;
+unsigned long lastAirFetchMs = 0;
 
 // ---- Notes feature ----
 static const size_t MAX_NOTES = 10;
@@ -268,7 +323,7 @@ void deleteNote(int index) {
 
 // Keeps currentScreen valid after notes are added/removed.
 void clampCurrentScreen() {
-  int screenCount = 1 + (int)notes.size();
+  int screenCount = NUM_FIXED_SCREENS + (int)notes.size();
   if (currentScreen < 0 || currentScreen >= screenCount) currentScreen = 0;
 }
 
@@ -276,6 +331,8 @@ void saveSettings() {
   settingsPrefs.putString("zip", zipCode);
   settingsPrefs.putBool("fahrenheit", useFahrenheit);
   settingsPrefs.putULong("cycleMs", screenCycleMs);
+  settingsPrefs.putString("localHost", localSensorHost);
+  settingsPrefs.putString("airHost", airQualityHost);
   settingsPrefs.putBool("s_hum", displaySettings.humidity);
   settingsPrefs.putBool("s_wind", displaySettings.wind);
   settingsPrefs.putBool("s_rain", displaySettings.rainChance);
@@ -300,6 +357,8 @@ void loadSettings() {
   zipCode = settingsPrefs.getString("zip", zipCode);
   useFahrenheit = settingsPrefs.getBool("fahrenheit", useFahrenheit);
   screenCycleMs = settingsPrefs.getULong("cycleMs", screenCycleMs);
+  localSensorHost = settingsPrefs.getString("localHost", localSensorHost);
+  airQualityHost = settingsPrefs.getString("airHost", airQualityHost);
   displaySettings.humidity = settingsPrefs.getBool("s_hum", displaySettings.humidity);
   displaySettings.wind = settingsPrefs.getBool("s_wind", displaySettings.wind);
   displaySettings.rainChance = settingsPrefs.getBool("s_rain", displaySettings.rainChance);
@@ -386,6 +445,65 @@ bool httpGetJson(const String& url, JsonDocument& doc, const JsonDocument* filte
   return ok;
 }
 
+// Plain-HTTP GET for the local sensor node (it's on the LAN, no TLS), kept
+// separate from httpGetJson() above which always speaks TLS to the outdoor
+// weather/geocoding APIs.
+bool httpGetJsonPlain(const String& url, JsonDocument& doc) {
+  WiFiClient client;
+  HTTPClient http;
+  if (!http.begin(client, url)) return false;
+  http.setTimeout(5000);
+  int code = http.GET();
+  bool ok = false;
+  if (code == HTTP_CODE_OK) {
+    String payload = http.getString();
+    ok = (deserializeJson(doc, payload) == DeserializationError::Ok);
+  }
+  http.end();
+  return ok;
+}
+
+// Polls the AHT20+BMP280 sensor node's tiny JSON API for hyper-local
+// temperature/humidity/pressure. The node is expected at localSensorHost
+// (mDNS hostname or IP), serving GET /data.
+bool fetchLocalSensor(const String& host, LocalSensorReading& out) {
+  if (host.isEmpty()) return false;
+  String url = "http://" + host + "/data";
+  JsonDocument doc;
+  if (!httpGetJsonPlain(url, doc)) return false;
+  out.tempC = doc["tempC"] | NAN;
+  out.humidityPct = doc["humidityPct"] | NAN;
+  out.pressureHpa = doc["pressureHpa"] | NAN;
+  out.online = doc["online"] | false;
+
+  JsonVariant fc = doc["forecast"];
+  out.haveForecast = !fc.isNull();
+  if (out.haveForecast) {
+    out.forecastState = fc["state"] | "";
+    out.rainProbabilityPct = fc["rainProbabilityPct"] | -1;
+    out.pressureTrend = fc["pressureTrend"] | "";
+  }
+  return true;
+}
+
+// Polls the PMS5003 particulate node's tiny JSON API for PM2.5/PM10
+// (atmospheric/"env" concentrations) and the US EPA PM2.5 AQI the node
+// derives from them. Expected at airQualityHost (mDNS hostname or IP),
+// serving GET /data, mirroring fetchLocalSensor() above.
+bool fetchAirQuality(const String& host, AirQualityReading& out) {
+  if (host.isEmpty()) return false;
+  String url = "http://" + host + "/data";
+  JsonDocument doc;
+  if (!httpGetJsonPlain(url, doc)) return false;
+  out.online = doc["online"] | false;
+  out.pm1_0 = doc["pm1_0"] | 0;
+  out.pm2_5 = doc["pm2_5"] | 0;
+  out.pm10 = doc["pm10"] | 0;
+  out.aqi = doc["aqi"] | -1;
+  out.aqiCategory = doc["aqiCategory"] | "";
+  return true;
+}
+
 enum SkyCategory {
   SKY_CLEAR,
   SKY_PARTLY_CLOUDY,
@@ -431,8 +549,9 @@ bool fetchWeather(const String& latLonStr, WeatherData& weather) {
 
   String url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
     "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,surface_pressure,is_day"
-    "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max"
-    "&timezone=auto&temperature_unit=celsius&wind_speed_unit=kmh&forecast_days=1";
+    "&hourly=temperature_2m,weather_code,is_day"
+    "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,uv_index_max"
+    "&timezone=auto&temperature_unit=celsius&wind_speed_unit=kmh&forecast_days=5&forecast_hours=36";
 
   JsonDocument filter;
   filter["utc_offset_seconds"] = true;
@@ -444,10 +563,14 @@ bool fetchWeather(const String& latLonStr, WeatherData& weather) {
   filter["current"]["wind_gusts_10m"] = true;
   filter["current"]["surface_pressure"] = true;
   filter["current"]["is_day"] = true;
-  filter["daily"]["temperature_2m_max"][0] = true;
-  filter["daily"]["temperature_2m_min"][0] = true;
-  filter["daily"]["precipitation_probability_max"][0] = true;
-  filter["daily"]["uv_index_max"][0] = true;
+  filter["hourly"]["temperature_2m"] = true;
+  filter["hourly"]["weather_code"] = true;
+  filter["hourly"]["is_day"] = true;
+  filter["daily"]["temperature_2m_max"] = true;
+  filter["daily"]["temperature_2m_min"] = true;
+  filter["daily"]["weather_code"] = true;
+  filter["daily"]["precipitation_probability_max"] = true;
+  filter["daily"]["uv_index_max"] = true;
 
   JsonDocument doc;
   if (!httpGetJson(url, doc, &filter)) return false;
@@ -473,6 +596,44 @@ bool fetchWeather(const String& latLonStr, WeatherData& weather) {
   weather.uvIndex = daily["uv_index_max"][0] | NAN;
 
   weather.condition = wmoInfo(weather.weatherCode).text;
+
+  // Local hour/weekday, used to index into the hourly/daily arrays below
+  // (the arrays themselves aren't fetched with timestamps, to save memory).
+  int nowHour = 12, nowWeekday = 0;
+  time_t now;
+  time(&now);
+  if (now >= 1700000000L) {
+    time_t local = now + utcOffsetSeconds;
+    struct tm t;
+    gmtime_r(&local, &t);
+    nowHour = t.tm_hour;
+    nowWeekday = t.tm_wday;
+  }
+
+  JsonArray hTemp = doc["hourly"]["temperature_2m"];
+  JsonArray hCode = doc["hourly"]["weather_code"];
+  JsonArray hDay = doc["hourly"]["is_day"];
+  int hourlyLen = hTemp.size();
+  for (int i = 0; i < HOURLY_COUNT; i++) {
+    int idx = nowHour + 3 * (i + 1);
+    if (hourlyLen == 0) idx = 0;
+    else if (idx >= hourlyLen) idx = hourlyLen - 1;
+    weather.hourly[i].hourOfDay = idx % 24;
+    weather.hourly[i].tempC = hourlyLen > 0 ? (hTemp[idx] | NAN) : NAN;
+    weather.hourly[i].code = hourlyLen > 0 ? (hCode[idx] | -1) : -1;
+    weather.hourly[i].isDay = hourlyLen > 0 ? ((hDay[idx] | 1) != 0) : true;
+  }
+
+  JsonArray dMax = doc["daily"]["temperature_2m_max"];
+  JsonArray dMin = doc["daily"]["temperature_2m_min"];
+  JsonArray dCode = doc["daily"]["weather_code"];
+  for (int i = 0; i < DAILY_COUNT; i++) {
+    weather.daily[i].highC = dMax[i] | NAN;
+    weather.daily[i].lowC = dMin[i] | NAN;
+    weather.daily[i].code = dCode[i] | -1;
+    weather.daily[i].weekday = (nowWeekday + i) % 7;
+  }
+
   return true;
 }
 
@@ -650,6 +811,83 @@ uint16_t categoryAccent(SkyCategory cat) {
     case SKY_SNOW:           return RGB565_WHITE;
     case SKY_FOG:            return RGB565(225, 230, 240);
     default:                 return RGB565(255, 110, 60);
+  }
+}
+
+// Solid, single-tone color for each condition's small forecast-tile glyph
+// (categoryAccent's bezel colors are too close to white/CARD_BG to read at
+// icon size, so forecast tiles get their own darker palette).
+uint16_t forecastIconColor(SkyCategory cat) {
+  switch (cat) {
+    case SKY_CLEAR:          return RGB565(230, 160, 20);
+    case SKY_PARTLY_CLOUDY:  return RGB565(130, 155, 185);
+    case SKY_CLOUDY:         return RGB565(140, 155, 175);
+    case SKY_RAIN:           return RGB565(20, 130, 220);
+    case SKY_STORM:          return RGB565(120, 95, 210);
+    case SKY_SNOW:           return RGB565(90, 170, 215);
+    case SKY_FOG:            return RGB565(150, 160, 175);
+    default:                 return INK_DIM;
+  }
+}
+
+// Compact ~20x24px condition glyph for the hourly/5-day forecast tiles,
+// where there isn't room for the full drawBackground() artwork.
+void drawForecastIcon(SkyCategory cat, bool isDay, int16_t cx, int16_t cy, uint16_t bg) {
+  uint16_t color = forecastIconColor(cat);
+  switch (cat) {
+    case SKY_CLEAR:
+      if (isDay) {
+        gfx->fillCircle(cx, cy, 6, color);
+        for (int i = 0; i < 8; i++) {
+          float ang = i * PI / 4.0f;
+          int16_t x1 = cx + (int16_t)(cos(ang) * 9), y1 = cy + (int16_t)(sin(ang) * 9);
+          int16_t x2 = cx + (int16_t)(cos(ang) * 13), y2 = cy + (int16_t)(sin(ang) * 13);
+          gfx->drawLine(x1, y1, x2, y2, color);
+        }
+      } else {
+        gfx->fillCircle(cx - 2, cy, 7, color);
+        gfx->fillCircle(cx + 3, cy - 3, 6, bg);
+      }
+      break;
+    case SKY_PARTLY_CLOUDY:
+      if (isDay) gfx->fillCircle(cx + 5, cy - 6, 5, RGB565(230, 170, 30));
+      gfx->fillCircle(cx - 5, cy + 2, 6, color);
+      gfx->fillCircle(cx + 2, cy + 2, 7, color);
+      gfx->fillRoundRect(cx - 8, cy + 2, 16, 6, 3, color);
+      break;
+    case SKY_CLOUDY:
+      gfx->fillCircle(cx - 6, cy, 6, color);
+      gfx->fillCircle(cx + 3, cy - 2, 8, color);
+      gfx->fillRoundRect(cx - 9, cy, 20, 7, 3, color);
+      break;
+    case SKY_RAIN:
+      gfx->fillCircle(cx - 5, cy - 3, 6, color);
+      gfx->fillCircle(cx + 3, cy - 5, 7, color);
+      gfx->fillRoundRect(cx - 8, cy - 3, 18, 6, 3, color);
+      gfx->drawLine(cx - 4, cy + 6, cx - 6, cy + 12, color);
+      gfx->drawLine(cx + 1, cy + 6, cx - 1, cy + 12, color);
+      gfx->drawLine(cx + 6, cy + 6, cx + 4, cy + 12, color);
+      break;
+    case SKY_STORM:
+      gfx->fillCircle(cx - 3, cy - 4, 7, color);
+      gfx->fillRoundRect(cx - 8, cy - 4, 18, 6, 3, color);
+      gfx->fillTriangle(cx + 2, cy + 3, cx - 4, cy + 11, cx + 1, cy + 9, RGB565(255, 200, 20));
+      gfx->fillTriangle(cx + 1, cy + 9, cx + 5, cy + 9, cx - 1, cy + 16, RGB565(255, 200, 20));
+      break;
+    case SKY_SNOW:
+      gfx->fillCircle(cx - 5, cy - 3, 6, color);
+      gfx->fillCircle(cx + 3, cy - 5, 7, color);
+      gfx->fillRoundRect(cx - 8, cy - 3, 18, 6, 3, color);
+      gfx->fillCircle(cx - 5, cy + 11, 2, color);
+      gfx->fillCircle(cx + 1, cy + 9, 2, color);
+      gfx->fillCircle(cx + 6, cy + 11, 2, color);
+      break;
+    case SKY_FOG:
+      for (int i = 0; i < 3; i++) gfx->fillRoundRect(cx - 9, cy - 6 + i * 6, 18, 3, 1, color);
+      break;
+    default:
+      gfx->drawCircle(cx, cy, 8, color);
+      break;
   }
 }
 
@@ -923,12 +1161,282 @@ void renderNote(const String& note, int index, int total) {
   }
 }
 
+// Shared chip + bezel + card frame used by the hourly/5-day screens, mirroring
+// renderWeather()'s layout so all screens read as one consistent set.
+void drawForecastFrame(const char* title, int16_t cardX, int16_t cardY, int16_t cardW, int16_t cardH) {
+  drawVerticalGradient(RGB565(214, 231, 245), RGB565(236, 244, 250));
+  gfx->drawCircle(120, 120, 118, RGB565_BLACK);
+  gfx->drawCircle(120, 120, 117, RGB565(150, 175, 200));
+
+  gfx->fillRoundRect(44, 18, 152, 27, 13, CARD_BG);
+  gfx->setTextColor(INK, CARD_BG);
+  centerText(title, 120, 32, 1, &FreeSansBold9pt7b);
+
+  gfx->fillRoundRect(cardX, cardY, cardW, cardH, 22, CARD_BG);
+}
+
+void renderHourly(const WeatherData& weather, bool online) {
+  const int16_t cardX = 24, cardY = 52, cardW = 192, cardH = 140;
+  drawForecastFrame("HOURLY", cardX, cardY, cardW, cardH);
+  const uint16_t chip = CARD_BG;
+
+  if (!online) {
+    gfx->setTextColor(OFFLINE_RED, chip);
+    centerText("Offline", 120, cardY + cardH / 2, 1, &FreeSans9pt7b);
+    return;
+  }
+
+  int colw = cardW / HOURLY_COUNT;
+  const int16_t labelY = cardY + 22, iconY = cardY + 60, tempY = cardY + 100;
+  for (int i = 0; i < HOURLY_COUNT; i++) {
+    const WeatherData::HourPoint& hp = weather.hourly[i];
+    int16_t cx = cardX + colw * i + colw / 2;
+    CodeInfo info = wmoInfo(hp.code);
+
+    int h12 = hp.hourOfDay % 12;
+    if (h12 == 0) h12 = 12;
+    char label[8];
+    snprintf(label, sizeof(label), "%d%s", h12, hp.hourOfDay < 12 ? "a" : "p");
+    gfx->setTextColor(INK_DIM, chip);
+    centerText(label, cx, labelY, 1, &FreeSans9pt7b);
+
+    drawForecastIcon(info.cat, hp.isDay, cx, iconY, chip);
+
+    char tempTxt[8];
+    if (isnan(hp.tempC)) {
+      snprintf(tempTxt, sizeof(tempTxt), "--");
+    } else {
+      float show = useFahrenheit ? (hp.tempC * 9.0f / 5.0f + 32.0f) : hp.tempC;
+      snprintf(tempTxt, sizeof(tempTxt), "%.0f\xF8", show);
+    }
+    gfx->setTextColor(INK, chip);
+    centerText(tempTxt, cx, tempY, 1, &FreeSansBold9pt7b);
+
+    if (i > 0) gfx->drawFastVLine(cardX + colw * i, cardY + 14, cardH - 28, DIVIDER);
+  }
+}
+
+void renderDaily(const WeatherData& weather, bool online) {
+  const int16_t cardX = 30, cardY = 50, cardW = 180, cardH = 146;
+  drawForecastFrame("5-DAY", cardX, cardY, cardW, cardH);
+  const uint16_t chip = CARD_BG;
+
+  if (!online) {
+    gfx->setTextColor(OFFLINE_RED, chip);
+    centerText("Offline", 120, cardY + cardH / 2, 1, &FreeSans9pt7b);
+    return;
+  }
+
+  static const char* WD[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+  int rowH = cardH / DAILY_COUNT;
+  for (int i = 0; i < DAILY_COUNT; i++) {
+    const WeatherData::DayPoint& dp = weather.daily[i];
+    int16_t rowY = cardY + rowH * i + rowH / 2;
+    CodeInfo info = wmoInfo(dp.code);
+
+    const char* label = (i == 0) ? "Today" : WD[dp.weekday];
+    gfx->setTextColor(INK, chip);
+    gfx->setFont(&FreeSans9pt7b);
+    gfx->setTextSize(1);
+    gfx->setCursor(cardX + 14, rowY + 4);
+    gfx->print(label);
+
+    drawForecastIcon(info.cat, true, cardX + 74, rowY, chip);
+
+    char hiLo[16];
+    if (isnan(dp.highC) || isnan(dp.lowC)) {
+      snprintf(hiLo, sizeof(hiLo), "--/--");
+    } else {
+      float hi = useFahrenheit ? (dp.highC * 9.0f / 5.0f + 32.0f) : dp.highC;
+      float lo = useFahrenheit ? (dp.lowC * 9.0f / 5.0f + 32.0f) : dp.lowC;
+      snprintf(hiLo, sizeof(hiLo), "%.0f\xF8/%.0f\xF8", hi, lo);
+    }
+    gfx->setFont(&FreeSansBold9pt7b);
+    int16_t x1, y1;
+    uint16_t w, h;
+    gfx->getTextBounds(hiLo, 0, 0, &x1, &y1, &w, &h);
+    gfx->setTextColor(INK, chip);
+    gfx->setCursor(cardX + cardW - 14 - w, rowY + 4);
+    gfx->print(hiLo);
+
+    if (i > 0) gfx->drawFastHLine(cardX + 14, cardY + rowH * i, cardW - 28, DIVIDER);
+  }
+}
+
+// Hyper-local comparison screen: what the AHT20+BMP280 node right outside is
+// reading, alongside the outdoor API's current temperature for reference.
+void renderLocal(const LocalSensorReading& local, bool sensorOnline, const WeatherData& outdoor, bool outdoorOnline) {
+  const int16_t cardX = 28, cardY = 44, cardW = 184, cardH = 160;
+  drawForecastFrame("LOCAL", cardX, cardY, cardW, cardH);
+  const uint16_t chip = CARD_BG;
+
+  if (!sensorOnline) {
+    gfx->setTextColor(OFFLINE_RED, chip);
+    centerText("Sensor offline", 120, cardY + cardH / 2 - 10, 1, &FreeSans9pt7b);
+    gfx->setTextColor(INK_DIM, chip);
+    centerText(localSensorHost.c_str(), 120, cardY + cardH / 2 + 12, 1, &FreeSans9pt7b);
+    return;
+  }
+
+  char tempText[16];
+  if (isnan(local.tempC)) {
+    snprintf(tempText, sizeof(tempText), useFahrenheit ? "--F" : "--C");
+  } else {
+    float v = useFahrenheit ? (local.tempC * 9.0f / 5.0f + 32.0f) : local.tempC;
+    snprintf(tempText, sizeof(tempText), "%.0f\xF8", v);
+  }
+  gfx->setTextColor(ACCENT_BLUE, chip);
+  centerText(tempText, 120, cardY + 34, 1, &FreeSansBold24pt7b);
+
+  gfx->setTextColor(INK_DIM, chip);
+  if (outdoorOnline && !isnan(outdoor.temperatureC)) {
+    float ov = useFahrenheit ? (outdoor.temperatureC * 9.0f / 5.0f + 32.0f) : outdoor.temperatureC;
+    char cmp[24];
+    snprintf(cmp, sizeof(cmp), "Outdoor %.0f\xF8", ov);
+    centerText(cmp, 120, cardY + 56, 1, &FreeSans9pt7b);
+  } else {
+    centerText("Outdoor --", 120, cardY + 56, 1, &FreeSans9pt7b);
+  }
+
+  gfx->drawFastHLine(cardX + 16, cardY + 70, cardW - 32, DIVIDER);
+
+  const int16_t iconY = cardY + 90, valueY = cardY + 108, capY = cardY + 124;
+  int16_t cx1 = 120 - 44, cx2 = 120 + 44;
+
+  uint16_t humColor = statColor(STAT_HUMIDITY);
+  drawStatIcon(STAT_HUMIDITY, cx1, iconY, humColor, chip);
+  char humText[8];
+  if (isnan(local.humidityPct)) snprintf(humText, sizeof(humText), "--");
+  else snprintf(humText, sizeof(humText), "%.0f%%", local.humidityPct);
+  gfx->setTextColor(humColor, chip);
+  centerText(humText, cx1, valueY, 1, &FreeSansBold9pt7b);
+  gfx->setTextColor(INK_DIM, chip);
+  centerText("Humidity", cx1, capY, 1, &FreeSans9pt7b);
+
+  uint16_t presColor = statColor(STAT_PRESSURE);
+  drawStatIcon(STAT_PRESSURE, cx2, iconY, presColor, chip);
+  char presText[8];
+  if (isnan(local.pressureHpa)) snprintf(presText, sizeof(presText), "--");
+  else snprintf(presText, sizeof(presText), "%.0f", local.pressureHpa);
+  gfx->setTextColor(presColor, chip);
+  centerText(presText, cx2, valueY, 1, &FreeSansBold9pt7b);
+  gfx->setTextColor(INK_DIM, chip);
+  centerText("hPa", cx2, capY, 1, &FreeSans9pt7b);
+
+  gfx->drawFastHLine(cardX + 16, cardY + 138, cardW - 32, DIVIDER);
+
+  // Rain likelihood from the Supabase pressure-trend forecast (relayed by
+  // the sensor node's /data); only shown once enough telemetry history
+  // exists for the RPC to compute a 3h trend.
+  if (local.haveForecast && local.rainProbabilityPct >= 0) {
+    char rainText[24];
+    snprintf(rainText, sizeof(rainText), "Rain chance: %d%%", local.rainProbabilityPct);
+    gfx->setTextColor(statColor(STAT_RAIN), chip);
+    centerText(rainText, 120, cardY + 152, 1, &FreeSansBold9pt7b);
+  } else {
+    gfx->setTextColor(INK_DIM, chip);
+    centerText("Rain: building history", 120, cardY + 152, 1, &FreeSans9pt7b);
+  }
+
+  if (lastLocalFetchMs > 0) {
+    unsigned long agoMin = (millis() - lastLocalFetchMs) / 60000UL;
+    char upd[24];
+    snprintf(upd, sizeof(upd), agoMin < 1 ? "Updated just now" : "Updated %lum ago", agoMin);
+    uint16_t skyAtY = lerpColor565(bgTopColor, bgBottomColor, 213 / 239.0f);
+    gfx->setTextColor(RGB565_DARKGREY, skyAtY);
+    centerText(upd, 120, 213, 1, &FreeSans9pt7b);
+  }
+}
+
+// AQI color bands, matching the standard EPA/AirNow PM2.5 AQI palette
+// (Good/Moderate/USG/Unhealthy/Very Unhealthy/Hazardous) that most consumer
+// air quality displays use.
+uint16_t aqiColor(int aqi) {
+  if (aqi < 0) return INK_DIM;
+  if (aqi <= 50) return RGB565(56, 168, 76);
+  if (aqi <= 100) return RGB565(220, 190, 40);
+  if (aqi <= 150) return RGB565(230, 140, 40);
+  if (aqi <= 200) return RGB565(210, 60, 55);
+  if (aqi <= 300) return RGB565(140, 60, 150);
+  return RGB565(120, 30, 40);
+}
+
+// PMS5003 particulate matter screen: PM2.5/PM10 (atmospheric concentration)
+// and the derived US EPA PM2.5 AQI, relayed by the sensor node's /data.
+void renderAirQuality(const AirQualityReading& air, bool sensorOnline) {
+  const int16_t cardX = 28, cardY = 44, cardW = 184, cardH = 160;
+  drawForecastFrame("AIR", cardX, cardY, cardW, cardH);
+  const uint16_t chip = CARD_BG;
+
+  if (!sensorOnline) {
+    gfx->setTextColor(OFFLINE_RED, chip);
+    centerText("Sensor offline", 120, cardY + cardH / 2 - 10, 1, &FreeSans9pt7b);
+    gfx->setTextColor(INK_DIM, chip);
+    centerText(airQualityHost.c_str(), 120, cardY + cardH / 2 + 12, 1, &FreeSans9pt7b);
+    return;
+  }
+
+  char aqiText[8];
+  if (air.aqi < 0) snprintf(aqiText, sizeof(aqiText), "--");
+  else snprintf(aqiText, sizeof(aqiText), "%d", air.aqi);
+  gfx->setTextColor(aqiColor(air.aqi), chip);
+  centerText(aqiText, 120, cardY + 34, 1, &FreeSansBold24pt7b);
+
+  gfx->setTextColor(INK_DIM, chip);
+  centerText(air.aqiCategory.length() ? air.aqiCategory.c_str() : "AQI", 120, cardY + 56, 1, &FreeSans9pt7b);
+
+  gfx->drawFastHLine(cardX + 16, cardY + 70, cardW - 32, DIVIDER);
+
+  const int16_t valueY = cardY + 108, capY = cardY + 124;
+  int16_t cx1 = 120 - 44, cx2 = 120 + 44;
+
+  char pm25Text[8];
+  snprintf(pm25Text, sizeof(pm25Text), "%d", air.pm2_5);
+  gfx->setTextColor(INK, chip);
+  centerText(pm25Text, cx1, valueY, 1, &FreeSansBold9pt7b);
+  gfx->setTextColor(INK_DIM, chip);
+  centerText("PM2.5", cx1, capY, 1, &FreeSans9pt7b);
+
+  char pm10Text[8];
+  snprintf(pm10Text, sizeof(pm10Text), "%d", air.pm10);
+  gfx->setTextColor(INK, chip);
+  centerText(pm10Text, cx2, valueY, 1, &FreeSansBold9pt7b);
+  gfx->setTextColor(INK_DIM, chip);
+  centerText("PM10", cx2, capY, 1, &FreeSans9pt7b);
+
+  gfx->drawFastHLine(cardX + 16, cardY + 138, cardW - 32, DIVIDER);
+
+  char pm1Text[24];
+  snprintf(pm1Text, sizeof(pm1Text), "PM1.0: %d ug/m3", air.pm1_0);
+  gfx->setTextColor(INK_DIM, chip);
+  centerText(pm1Text, 120, cardY + 152, 1, &FreeSans9pt7b);
+
+  if (lastAirFetchMs > 0) {
+    unsigned long agoMin = (millis() - lastAirFetchMs) / 60000UL;
+    char upd[24];
+    snprintf(upd, sizeof(upd), agoMin < 1 ? "Updated just now" : "Updated %lum ago", agoMin);
+    uint16_t skyAtY = lerpColor565(bgTopColor, bgBottomColor, 213 / 239.0f);
+    gfx->setTextColor(RGB565_DARKGREY, skyAtY);
+    centerText(upd, 120, 213, 1, &FreeSans9pt7b);
+  }
+}
+
 void renderCurrentScreen() {
-  if (currentScreen == 0 || notes.empty()) {
+  if (currentScreen == 0) {
+    renderWeather(currentWeather, haveData);
+  } else if (currentScreen == 1) {
+    renderHourly(currentWeather, haveData);
+  } else if (currentScreen == 2) {
+    renderDaily(currentWeather, haveData);
+  } else if (currentScreen == 3) {
+    renderLocal(localSensor, haveLocalSensor && localSensor.online, currentWeather, haveData);
+  } else if (currentScreen == 4) {
+    renderAirQuality(airQuality, haveAirQuality && airQuality.online);
+  } else if (notes.empty()) {
     renderWeather(currentWeather, haveData);
   } else {
-    int idx = currentScreen - 1;
-    if (idx >= (int)notes.size()) idx = 0;
+    int idx = currentScreen - NUM_FIXED_SCREENS;
+    if (idx < 0 || idx >= (int)notes.size()) idx = 0;
     renderNote(notes[idx], idx, notes.size());
   }
 }
@@ -951,9 +1459,15 @@ void buildStatusJson(JsonDocument& doc) {
   doc["fahrenheit"] = useFahrenheit;
   doc["cycleSeconds"] = screenCycleMs / 1000UL;
   doc["currentScreen"] = currentScreen;
+  doc["localHost"] = localSensorHost;
+  doc["airHost"] = airQualityHost;
 
   JsonArray screens = doc["screens"].to<JsonArray>();
   screens.add("Weather");
+  screens.add("Hourly");
+  screens.add("5-Day");
+  screens.add("Local");
+  screens.add("Air Quality");
   for (size_t i = 0; i < notes.size(); i++) screens.add(notes[i]);
 
   doc["updatedSecondsAgo"] = lastFetchMs ? (millis() - lastFetchMs) / 1000UL : 0;
@@ -972,6 +1486,28 @@ void buildStatusJson(JsonDocument& doc) {
   w["uvIndex"] = currentWeather.uvIndex;
   w["highC"] = currentWeather.highC;
   w["lowC"] = currentWeather.lowC;
+
+  JsonObject local = doc["local"].to<JsonObject>();
+  local["online"] = haveLocalSensor && localSensor.online;
+  local["tempC"] = localSensor.tempC;
+  local["humidityPct"] = localSensor.humidityPct;
+  local["pressureHpa"] = localSensor.pressureHpa;
+  local["updatedSecondsAgo"] = lastLocalFetchMs ? (millis() - lastLocalFetchMs) / 1000UL : 0;
+  if (localSensor.haveForecast) {
+    JsonObject forecast = local["forecast"].to<JsonObject>();
+    forecast["state"] = localSensor.forecastState;
+    forecast["rainProbabilityPct"] = localSensor.rainProbabilityPct;
+    forecast["pressureTrend"] = localSensor.pressureTrend;
+  }
+
+  JsonObject air = doc["air"].to<JsonObject>();
+  air["online"] = haveAirQuality && airQuality.online;
+  air["pm1_0"] = airQuality.pm1_0;
+  air["pm2_5"] = airQuality.pm2_5;
+  air["pm10"] = airQuality.pm10;
+  air["aqi"] = airQuality.aqi;
+  air["aqiCategory"] = airQuality.aqiCategory;
+  air["updatedSecondsAgo"] = lastAirFetchMs ? (millis() - lastAirFetchMs) / 1000UL : 0;
 
   JsonObject show = doc["show"].to<JsonObject>();
   show["humidity"] = displaySettings.humidity;
@@ -1013,8 +1549,12 @@ void handleApiRefresh() {
   if (!latLon.isEmpty()) {
     haveData = fetchWeather(latLon, currentWeather);
     lastFetchMs = millis();
-    if (currentScreen == 0) renderCurrentScreen();
   }
+  haveLocalSensor = fetchLocalSensor(localSensorHost, localSensor);
+  lastLocalFetchMs = millis();
+  haveAirQuality = fetchAirQuality(airQualityHost, airQuality);
+  lastAirFetchMs = millis();
+  if (currentScreen == 0 || currentScreen == 3 || currentScreen == 4) renderCurrentScreen();
   sendStatusJson();
 }
 
@@ -1058,6 +1598,28 @@ void handleApiSettings() {
 
   JsonVariant vF = req["fahrenheit"];
   if (!vF.isNull()) useFahrenheit = vF.as<bool>();
+
+  JsonVariant vLocalHost = req["localHost"];
+  if (!vLocalHost.isNull()) {
+    String newHost = vLocalHost.as<String>();
+    newHost.trim();
+    if (newHost.length() && newHost != localSensorHost) {
+      localSensorHost = newHost;
+      haveLocalSensor = false;
+      lastLocalFetchMs = 0; // forces a refetch on the next loop() pass
+    }
+  }
+
+  JsonVariant vAirHost = req["airHost"];
+  if (!vAirHost.isNull()) {
+    String newHost = vAirHost.as<String>();
+    newHost.trim();
+    if (newHost.length() && newHost != airQualityHost) {
+      airQualityHost = newHost;
+      haveAirQuality = false;
+      lastAirFetchMs = 0; // forces a refetch on the next loop() pass
+    }
+  }
 
   JsonVariant vSpeed = req["cycleSeconds"];
   if (!vSpeed.isNull()) {
@@ -1127,7 +1689,7 @@ void handleApiNotesDelete() {
 void handleApiGoto() {
   JsonDocument req;
   deserializeJson(req, server.arg("plain"));
-  int screenCount = 1 + (int)notes.size();
+  int screenCount = NUM_FIXED_SCREENS + (int)notes.size();
   int page = req["page"] | 0;
   page = constrain(page, 0, screenCount - 1);
   currentScreen = page;
@@ -1263,6 +1825,18 @@ void loop() {
       if (currentScreen == 0) needsRedraw = true;
     }
 
+    if (millis() - lastLocalFetchMs >= LOCAL_SENSOR_INTERVAL_MS || lastLocalFetchMs == 0) {
+      haveLocalSensor = fetchLocalSensor(localSensorHost, localSensor);
+      lastLocalFetchMs = millis();
+      if (currentScreen == 3) needsRedraw = true;
+    }
+
+    if (millis() - lastAirFetchMs >= AIR_QUALITY_INTERVAL_MS || lastAirFetchMs == 0) {
+      haveAirQuality = fetchAirQuality(airQualityHost, airQuality);
+      lastAirFetchMs = millis();
+      if (currentScreen == 4) needsRedraw = true;
+    }
+
     static unsigned long lastScheduleCheckMs = 0;
     if (millis() - lastScheduleCheckMs >= 15000UL) {
       lastScheduleCheckMs = millis();
@@ -1270,7 +1844,7 @@ void loop() {
     }
   }
 
-  int screenCount = 1 + (int)notes.size();
+  int screenCount = NUM_FIXED_SCREENS + (int)notes.size();
   if (millis() - lastScreenSwitchMs >= screenCycleMs) {
     currentScreen = (currentScreen + 1) % screenCount;
     lastScreenSwitchMs = millis();

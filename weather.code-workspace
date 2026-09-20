@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "Weather Station",
+			"path": "."
+		},
+		{
+			"name": "Local Sensor",
+			"path": "local-sensor"
+		}
+	],
+	"settings": {}
+}

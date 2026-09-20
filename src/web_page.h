@@ -386,6 +386,18 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
 
     <div class="grid" id="stat-grid"></div>
 
+    <div class="card" id="local-card" style="margin-top:16px;">
+      <h3>Local sensor</h3>
+      <div class="grid" id="local-grid" style="margin-top:0;"></div>
+      <p class="hint" id="local-caption" style="margin:10px 0 0;">—</p>
+    </div>
+
+    <div class="card" id="air-card" style="margin-top:16px;">
+      <h3>Air quality</h3>
+      <div class="grid" id="air-grid" style="margin-top:0;"></div>
+      <p class="hint" id="air-caption" style="margin:10px 0 0;">—</p>
+    </div>
+
   </section>
 
   <!-- ===================== SETTINGS ===================== -->
@@ -403,6 +415,30 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
           <button class="btn" id="zip-save">Update</button>
         </div>
         <p class="hint" style="margin:10px 0 0" id="latlon-readout">30.2419, -81.3901</p>
+      </div>
+
+      <div class="card">
+        <h3>Local sensor</h3>
+        <p class="hint">Hostname or IP of the AHT20+BMP280 node reading conditions right outside.</p>
+        <div class="row">
+          <div class="field">
+            <label for="localhost-input">Sensor address</label>
+            <input type="text" id="localhost-input" placeholder="localsensor.local" value="localsensor.local">
+          </div>
+          <button class="btn" id="localhost-save">Update</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Air quality</h3>
+        <p class="hint">Hostname or IP of the PMS5003 particulate sensor node.</p>
+        <div class="row">
+          <div class="field">
+            <label for="airhost-input">Sensor address</label>
+            <input type="text" id="airhost-input" placeholder="airquality.local" value="airquality.local">
+          </div>
+          <button class="btn" id="airhost-save">Update</button>
+        </div>
       </div>
 
       <div class="card">
@@ -536,13 +572,18 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
     fahrenheit: false,
     cycleSeconds: 5,
     currentScreen: 0,
-    screens: ["Weather", "bring in the packages", "water the ferns thursday"],
+    localHost: "localsensor.local",
+    airHost: "airquality.local",
+    screens: ["Weather", "Hourly", "5-Day", "Local", "Air Quality", "bring in the packages", "water the ferns thursday"],
     updatedSecondsAgo: 132,
     weather: {
       code: 80, isDay: false, condition: "Rain showers",
       tempC: 25.7, feelsLikeC: 30.3, humidity: 91, windKph: 11.1, windGustKph: 16.2,
       pressureHpa: 1014.6, rainChancePct: 43, uvIndex: 7.45, highC: 30.6, lowC: 23.6
     },
+    local: { online: true, tempC: 24.2, humidityPct: 55, pressureHpa: 1015.8, updatedSecondsAgo: 38,
+      forecast: { state: "Fair", rainProbabilityPct: 20, pressureTrend: "Steady" } },
+    air: { online: true, pm1_0: 4, pm2_5: 8, pm10: 11, aqi: 33, aqiCategory: "Good", updatedSecondsAgo: 45 },
     show: { humidity:true, wind:true, rainChance:true, feelsLike:false, highLow:true, pressure:false, uv:false },
     power: {
       on: true, brightness: 100,
@@ -651,8 +692,62 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
     ring.setAttribute("stroke-dashoffset", (C * (1 - pct/100)).toFixed(1));
 
     renderStatGrid(w);
+    renderLocalCard();
+    renderAirCard();
     if (!editingSettings) { renderSettings(); renderPower(); }
     renderNotes();
+  }
+
+  function renderLocalCard(){
+    var l = state.local || {};
+    var online = !!l.online;
+    var grid = document.getElementById("local-grid");
+    grid.innerHTML = "";
+    var fc = l.forecast;
+    var items = [
+      { name:"Temp", val: isNum(l.tempC) ? Math.round(u(l.tempC)) + "°" : "--" },
+      { name:"Humidity", val: isNum(l.humidityPct) ? Math.round(l.humidityPct) + "%" : "--" },
+      { name:"Pressure", val: isNum(l.pressureHpa) ? Math.round(l.pressureHpa) + " hPa" : "--" },
+      { name:"Rain chance", val: (fc && isNum(fc.rainProbabilityPct)) ? fc.rainProbabilityPct + "%" : "--" }
+    ];
+    items.forEach(function(it){
+      var el = document.createElement("div");
+      el.className = "stat";
+      el.innerHTML = '<div class="head"><span class="label">'+it.name+'</span></div><div class="value">'+it.val+'</div>';
+      grid.appendChild(el);
+    });
+    var cap = document.getElementById("local-caption");
+    var mins = Math.round((l.updatedSecondsAgo||0)/60);
+    var freshness = online
+      ? "Live via " + (state.localHost || "sensor") + " · updated " + (mins < 1 ? "just now" : mins + " min ago")
+      : "Sensor offline (" + (state.localHost || "not configured") + ")";
+    cap.textContent = (fc && fc.state) ? freshness + " · " + fc.state + " (" + fc.pressureTrend + ")" : freshness;
+    cap.style.color = online ? "" : "#d64545";
+  }
+
+  function renderAirCard(){
+    var a = state.air || {};
+    var online = !!a.online;
+    var grid = document.getElementById("air-grid");
+    grid.innerHTML = "";
+    var items = [
+      { name:"PM2.5", val: isNum(a.pm2_5) ? a.pm2_5 + " µg/m³" : "--" },
+      { name:"PM10", val: isNum(a.pm10) ? a.pm10 + " µg/m³" : "--" },
+      { name:"AQI", val: isNum(a.aqi) ? a.aqi : "--" }
+    ];
+    items.forEach(function(it){
+      var el = document.createElement("div");
+      el.className = "stat";
+      el.innerHTML = '<div class="head"><span class="label">'+it.name+'</span></div><div class="value">'+it.val+'</div>';
+      grid.appendChild(el);
+    });
+    var cap = document.getElementById("air-caption");
+    var mins = Math.round((a.updatedSecondsAgo||0)/60);
+    var freshness = online
+      ? "Live via " + (state.airHost || "sensor") + " · updated " + (mins < 1 ? "just now" : mins + " min ago")
+      : "Sensor offline (" + (state.airHost || "not configured") + ")";
+    cap.textContent = (online && a.aqiCategory) ? freshness + " · " + a.aqiCategory : freshness;
+    cap.style.color = online ? "" : "#d64545";
   }
 
   function renderStatGrid(w){
@@ -675,6 +770,8 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
   function renderSettings(){
     document.getElementById("zip-input").value = state.zip;
     document.getElementById("latlon-readout").textContent = state.latlon;
+    document.getElementById("localhost-input").value = state.localHost || "";
+    document.getElementById("airhost-input").value = state.airHost || "";
     document.getElementById("speed-slider").value = state.cycleSeconds;
     document.getElementById("speed-val").textContent = state.cycleSeconds + "s";
     document.querySelectorAll("#unit-seg button").forEach(function(b){
@@ -720,7 +817,7 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
   function renderNotes(){
     var list = document.getElementById("note-list");
     list.innerHTML = "";
-    var notes = state.screens.slice(1);
+    var notes = state.screens.slice(4);
     if (!notes.length){
       list.innerHTML = '<p class="empty">No notes yet — add one below and it\'ll cycle on the station.</p>';
       return;
@@ -731,7 +828,7 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
       row.innerHTML =
         '<span class="idx">'+String(i+1).padStart(2,"0")+'</span>' +
         '<span class="txt"></span>' +
-        '<button class="icon-btn" data-goto="'+(i+1)+'" title="Show on station" aria-label="Show on station"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>' +
+        '<button class="icon-btn" data-goto="'+(i+4)+'" title="Show on station" aria-label="Show on station"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>' +
         '<button class="icon-btn" data-del="'+i+'" title="Delete" aria-label="Delete note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
       row.querySelector(".txt").textContent = text;
       list.appendChild(row);
@@ -788,6 +885,22 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
       .catch(function(){ toast("Couldn't resolve that ZIP"); });
   });
 
+  document.getElementById("localhost-save").addEventListener("click", function(){
+    var host = document.getElementById("localhost-input").value.trim();
+    if (!host){ toast("Enter a hostname or IP"); return; }
+    if (state.demo){ state.localHost = host; toast("Preview mode — saved locally only"); render(); return; }
+    apiPost("/api/settings", { localHost: host }).then(function(data){ state = data; render(); toast("Sensor address updated"); })
+      .catch(function(){ toast("Couldn't save sensor address"); });
+  });
+
+  document.getElementById("airhost-save").addEventListener("click", function(){
+    var host = document.getElementById("airhost-input").value.trim();
+    if (!host){ toast("Enter a hostname or IP"); return; }
+    if (state.demo){ state.airHost = host; toast("Preview mode — saved locally only"); render(); return; }
+    apiPost("/api/settings", { airHost: host }).then(function(data){ state = data; render(); toast("Sensor address updated"); })
+      .catch(function(){ toast("Couldn't save sensor address"); });
+  });
+
   document.getElementById("unit-seg").addEventListener("click", function(e){
     var b = e.target.closest("button"); if (!b) return;
     var f = b.dataset.unit === "f";
@@ -839,7 +952,7 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
     var go = e.target.closest("[data-goto]");
     if (del){
       var i = parseInt(del.dataset.del, 10);
-      if (state.demo){ state.screens.splice(i+1,1); render(); return; }
+      if (state.demo){ state.screens.splice(i+4,1); render(); return; }
       apiPost("/api/notes/delete", { index:i }).then(function(d){ state = d; render(); toast("Note deleted"); });
     } else if (go){
       var page = parseInt(go.dataset.goto, 10);
