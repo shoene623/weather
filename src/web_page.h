@@ -100,8 +100,10 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
   nav.tabs{
     display:flex; gap:4px; padding:4px;
     background:var(--surface-2); border:1px solid var(--border);
-    border-radius:12px; width:fit-content; margin-bottom:22px;
+    border-radius:12px; width:fit-content; max-width:100%; margin-bottom:22px;
+    overflow-x:auto; scrollbar-width:none;
   }
+  nav.tabs button{ flex:none; }
   nav.tabs button{
     appearance:none; border:none; background:transparent; color:var(--text-dim);
     font-size:.86rem; font-weight:600; padding:8px 16px; border-radius:9px;
@@ -295,6 +297,108 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
   .icon-btn svg{ width:14px; height:14px; }
   .empty{ color:var(--text-faint); font-size:.86rem; padding:8px 2px; }
 
+  /* ---------- air quality ---------- */
+  /* EPA AQI band colors (Good .. Hazardous), slightly deepened from the
+     official swatches so they hold up on white. Always paired with a label. */
+  :root{
+    --aqi-0:#1fb84f; --aqi-1:#f2c200; --aqi-2:#fa7e00;
+    --aqi-3:#e3242b; --aqi-4:#8f3f97; --aqi-5:#7e0023;
+    --series-pm25:#1a73c7; --series-pm10:#c4561d;
+  }
+  .air-hero{
+    display:grid; grid-template-columns:auto 1fr; gap:clamp(18px,4vw,40px); align-items:center;
+    background:var(--surface); border:1px solid var(--border); border-radius:24px;
+    padding:24px clamp(18px,4vw,36px); box-shadow:var(--shadow);
+  }
+  .aqi-gauge{ position:relative; width:min(230px,58vw); aspect-ratio:1; }
+  .aqi-gauge svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+  .aqi-gauge .center{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding-bottom:6%;
+  }
+  .aqi-gauge .num{ font-family:var(--font-display); font-weight:600; font-size:clamp(2.8rem,9vw,3.6rem); line-height:1; font-variant-numeric:tabular-nums; }
+  .aqi-gauge .unit{ font-size:.7rem; font-weight:700; letter-spacing:.08em; color:var(--text-faint); margin-top:6px; }
+  .aqi-gauge .ends{ position:absolute; left:0; right:0; bottom:4%; display:flex; justify-content:space-between; padding-inline:16%; font-size:.68rem; color:var(--text-faint); font-variant-numeric:tabular-nums; }
+  .band-pill{
+    display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:.82rem;
+    padding:5px 12px 5px 10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border);
+  }
+  .band-pill .sw{ width:10px; height:10px; border-radius:50%; flex:none; box-shadow:0 0 0 2px var(--surface); }
+  .air-info h2{ margin:12px 0 6px; font-family:var(--font-display); font-weight:600; font-size:clamp(1.3rem,3.4vw,1.7rem); text-wrap:balance; }
+  .air-info p{ margin:0; color:var(--text-dim); font-size:.92rem; line-height:1.5; max-width:52ch; }
+  .air-info .meta{ margin-top:14px; font-size:.76rem; color:var(--text-faint); }
+  .air-info .meta.off{ color:#d64545; }
+
+  .pm-grid{ display:grid; gap:12px; margin-top:16px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+  .pm{ background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:18px 20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px; }
+  .pm .top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .pm .name{ font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); }
+  .pm .name span{ font-weight:600; letter-spacing:0; text-transform:none; }
+  .pm .value{ font-family:var(--font-display); font-size:2rem; font-weight:600; font-variant-numeric:tabular-nums; line-height:1; }
+  .pm .value .unit{ font-family:var(--font-body); font-size:.8rem; font-weight:500; color:var(--text-dim); margin-left:4px; }
+  .pm .band-pill{ align-self:flex-start; font-size:.74rem; padding:4px 10px 4px 8px; }
+  .pm p{ margin:0; font-size:.82rem; line-height:1.5; color:var(--text-dim); }
+  .scale{ position:relative; padding-top:10px; }
+  .scale .bar{ display:flex; gap:2px; height:8px; }
+  .scale .bar i{ flex:1; border-radius:2px; }
+  .scale .bar i:first-child{ border-radius:4px 2px 2px 4px; }
+  .scale .bar i:last-child{ border-radius:2px 4px 4px 2px; }
+  .scale .mark{
+    position:absolute; top:0; width:0; height:0; transform:translateX(-6px);
+    border-left:6px solid transparent; border-right:6px solid transparent; border-top:8px solid var(--text);
+  }
+  .scale .ticks{ position:relative; height:14px; margin-top:4px; font-size:.64rem; color:var(--text-faint); font-variant-numeric:tabular-nums; }
+  .scale .ticks span{ position:absolute; transform:translateX(-50%); }
+  .scale .ticks span:first-child{ transform:none; }
+
+  .chart-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .legend{ display:flex; gap:14px; font-size:.78rem; color:var(--text-dim); }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:14px; height:3px; border-radius:2px; display:inline-block; }
+  .seg.small button{ padding:6px 12px; font-size:.76rem; }
+  .chart-wrap{ position:relative; }
+  .chart-wrap svg{ display:block; width:100%; height:240px; }
+  .chart-wrap .axis text{ font-size:10.5px; fill:var(--text-faint); font-family:var(--font-body); }
+  .chart-wrap .grid-line{ stroke:var(--border); }
+  .chart-wrap .guide{ stroke:var(--text-faint); stroke-dasharray:3 4; opacity:.7; }
+  .chart-wrap .guide-label{ font-size:10px; fill:var(--text-faint); }
+  .chart-wrap .direct{ font-size:11px; font-weight:700; fill:var(--text-dim); }
+  .chart-tip{
+    position:absolute; pointer-events:none; background:var(--text); color:var(--bg);
+    font-size:.76rem; padding:8px 10px; border-radius:10px; white-space:nowrap; box-shadow:0 6px 18px rgba(0,0,0,.25);
+    transform:translate(-50%,-100%); opacity:0; transition:opacity .1s ease;
+  }
+  .chart-tip.show{ opacity:1; }
+  .chart-tip b{ font-variant-numeric:tabular-nums; }
+  .chart-tip .k{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  .chart-empty{ padding:28px 8px; text-align:center; color:var(--text-faint); font-size:.86rem; }
+
+  .aqi-table{ width:100%; border-collapse:collapse; font-size:.84rem; }
+  .aqi-table th{ text-align:left; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); font-weight:800; padding:0 10px 8px 0; }
+  .aqi-table td{ padding:10px 10px 10px 0; border-top:1px solid var(--border); vertical-align:top; line-height:1.45; }
+  .aqi-table td:last-child{ min-width:210px; }
+  .aqi-table td.n{ font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--text-dim); }
+  .aqi-table tr.now td{ background:var(--surface-2); }
+  .aqi-table tr.now td:first-child{ box-shadow:inset 3px 0 0 var(--text); }
+  .aqi-table .lvl{ display:flex; align-items:center; gap:8px; font-weight:700; white-space:nowrap; padding-left:8px; }
+  .aqi-table .lvl i{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .aqi-table .now-tag{ font-size:.62rem; font-weight:800; letter-spacing:.05em; background:var(--text); color:var(--bg); padding:2px 6px; border-radius:99px; }
+  .table-scroll{ overflow-x:auto; }
+  .facts{ margin:0; padding-left:18px; color:var(--text-dim); font-size:.86rem; line-height:1.55; }
+  .facts li + li{ margin-top:8px; }
+  .facts b{ color:var(--text); }
+
+  .air-summary{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .air-summary .big{ font-family:var(--font-display); font-size:2.2rem; font-weight:600; line-height:1; font-variant-numeric:tabular-nums; }
+  .air-summary .txt{ flex:1; min-width:180px; }
+  .air-summary .txt div{ font-size:.84rem; color:var(--text-dim); margin-top:4px; }
+
+  @media (max-width:640px){
+    .air-hero{ grid-template-columns:1fr; justify-items:center; text-align:center; }
+    .air-info p{ margin-inline:auto; }
+    .aqi-table .hide-sm{ display:none; }
+  }
+
   /* ---------- toast ---------- */
   .toast{
     position:fixed; left:50%; bottom:24px; transform:translate(-50%,20px);
@@ -345,6 +449,7 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
 
   <nav class="tabs" role="tablist">
     <button class="active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
+    <button data-tab="air" role="tab" aria-selected="false">Air</button>
     <button data-tab="settings" role="tab" aria-selected="false">Settings</button>
     <button data-tab="notes" role="tab" aria-selected="false">Notes</button>
     <button data-tab="power" role="tab" aria-selected="false">Power</button>
@@ -393,9 +498,79 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
     </div>
 
     <div class="card" id="air-card" style="margin-top:16px;">
-      <h3>Air quality</h3>
-      <div class="grid" id="air-grid" style="margin-top:0;"></div>
-      <p class="hint" id="air-caption" style="margin:10px 0 0;">—</p>
+      <h3 style="margin-bottom:12px;">Air quality</h3>
+      <div class="air-summary">
+        <span class="big" id="air-sum-aqi">--</span>
+        <div class="txt">
+          <span class="band-pill" id="air-sum-pill"><span class="sw"></span><span>—</span></span>
+          <div id="air-sum-pm">PM2.5 -- · PM10 -- µg/m³</div>
+        </div>
+        <button class="btn ghost small" id="air-details-btn">Details &rarr;</button>
+      </div>
+      <p class="hint" id="air-caption" style="margin:12px 0 0;">—</p>
+    </div>
+
+  </section>
+
+  <!-- ===================== AIR ===================== -->
+  <section id="tab-air" hidden>
+
+    <div class="air-hero">
+      <div class="aqi-gauge" role="img" id="aqi-gauge-wrap" aria-label="Air quality index gauge">
+        <svg viewBox="0 0 200 200" id="aqi-gauge"></svg>
+        <div class="center">
+          <div class="num" id="aqi-num">--</div>
+          <div class="unit">US AQI</div>
+        </div>
+        <div class="ends"><span>0</span><span>500</span></div>
+      </div>
+      <div class="air-info">
+        <span class="band-pill" id="aqi-pill"><span class="sw"></span><span>—</span></span>
+        <h2 id="aqi-headline">Waiting for the sensor…</h2>
+        <p id="aqi-advice"></p>
+        <div class="meta" id="aqi-meta">—</div>
+      </div>
+    </div>
+
+    <div class="pm-grid" id="pm-grid"></div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="chart-head">
+        <h3 style="margin:0;">Particle levels over time</h3>
+        <div class="legend">
+          <span><i style="background:var(--series-pm25)"></i>PM2.5</span>
+          <span><i style="background:var(--series-pm10)"></i>PM10</span>
+        </div>
+        <div class="seg small" id="range-seg">
+          <button data-hours="6">6 h</button>
+          <button data-hours="24" class="active">24 h</button>
+        </div>
+      </div>
+      <div class="chart-wrap" id="chart-wrap">
+        <svg id="air-chart" role="img" aria-label="PM2.5 and PM10 over time"></svg>
+        <div class="chart-tip" id="chart-tip"></div>
+      </div>
+      <p class="hint" style="margin:8px 0 0;">5-minute averages in µg/m³. Dashed lines mark the PM2.5 limits for <b>Good</b> (12) and <b>Moderate</b> (35). The station keeps 24 hours in memory; history restarts if the station reboots.</p>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-bottom:12px;">What the AQI levels mean</h3>
+      <div class="table-scroll">
+        <table class="aqi-table">
+          <thead><tr><th>Level</th><th>AQI</th><th>PM2.5</th><th class="hide-sm">PM10</th><th>What to do</th></tr></thead>
+          <tbody id="aqi-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-bottom:12px;">Good to know</h3>
+      <ul class="facts">
+        <li><b>The AQI turns particle levels into one 0–500 score.</b> It comes from PM2.5, the fine particles that do the most harm, so a higher number means worse air.</li>
+        <li><b>This is a live reading.</b> The official AQI is a 24-hour average, so short spikes from cooking, candles, vacuuming or a passing car look worse here than they would on a weather report. Use the chart to judge the overall trend.</li>
+        <li><b>Fog and very humid air read high.</b> The sensor counts particles with a laser, and water droplets look like particles to it when humidity is above about 85%.</li>
+        <li><b>Placement matters.</b> Indoors, it measures your home's air. Outdoors, it measures your neighborhood's.</li>
+      </ul>
     </div>
 
   </section>
@@ -694,6 +869,7 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
     renderStatGrid(w);
     renderLocalCard();
     renderAirCard();
+    renderAirTab();
     if (!editingSettings) { renderSettings(); renderPower(); }
     renderNotes();
   }
@@ -725,29 +901,334 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
     cap.style.color = online ? "" : "#d64545";
   }
 
+  // ---------- air quality ----------
+  // US EPA AQI bands; breakpoints match the sensor node's library so the
+  // page, the node's AQI and the round display all agree.
+  var AQI_BANDS = [
+    { max:50,  name:"Good",                           short:"Good",
+      pm25:"0–12",        pm10:"0–54",
+      headline:"The air is clean",
+      advice:"Air quality is satisfactory, with little or no risk. A good time to open the windows or head outside.",
+      todo:"Enjoy the outdoors." },
+    { max:100, name:"Moderate",                       short:"Moderate",
+      pm25:"12.1–35.4",   pm10:"55–154",
+      headline:"Acceptable for most people",
+      advice:"Fine for nearly everyone. People who are unusually sensitive to particle pollution may want to take it easier on long, hard workouts outside.",
+      todo:"Unusually sensitive people: go easier on long, hard exercise." },
+    { max:150, name:"Unhealthy for sensitive groups",  short:"Unhealthy (sensitive)",
+      pm25:"35.5–55.4",   pm10:"155–254",
+      headline:"Sensitive groups should take care",
+      advice:"Children, older adults, and people with asthma or heart or lung disease should cut back on long or strenuous activity. Everyone else is unlikely to be affected.",
+      todo:"Kids, older adults, and people with asthma or heart or lung conditions: limit long or strenuous activity." },
+    { max:200, name:"Unhealthy",                      short:"Unhealthy",
+      pm25:"55.5–150.4",  pm10:"255–354",
+      headline:"Unhealthy for everyone",
+      advice:"Anyone may start to feel effects. Keep outdoor exertion short, and sensitive groups should avoid it. Close the windows and run an air purifier if you have one.",
+      todo:"Everyone: cut back outdoor exertion. Sensitive groups: avoid it." },
+    { max:300, name:"Very unhealthy",                 short:"Very unhealthy",
+      pm25:"150.5–250.4", pm10:"355–424",
+      headline:"Health alert",
+      advice:"Everyone is at risk of health effects. Avoid long outdoor activity, keep windows shut, and filter indoor air.",
+      todo:"Everyone: avoid long outdoor activity. Sensitive groups: stay inside." },
+    { max:500, name:"Hazardous",                      short:"Hazardous",
+      pm25:"250.5+",      pm10:"425+",
+      headline:"Emergency conditions",
+      advice:"Serious risk for everyone. Stay indoors with windows closed and filtered air, and avoid all outdoor exertion.",
+      todo:"Everyone: stay indoors and avoid all outdoor activity." }
+  ];
+  var PM25_BREAKS = [0, 12, 35.4, 55.4, 150.4, 250.4, 500.4];
+  var PM10_BREAKS = [0, 54, 154, 254, 354, 424, 604];
+  var AQI_BREAKS  = [0, 50, 100, 150, 200, 300, 500];
+  var FIXED_SCREENS = 5; // Weather, Hourly, 5-Day, Local, Air Quality; notes follow
+
+  function aqiBand(aqi){ for (var i = 0; i < AQI_BANDS.length; i++) if (aqi <= AQI_BANDS[i].max) return i; return AQI_BANDS.length - 1; }
+  function bandColor(i){ return "var(--aqi-" + i + ")"; }
+  // Concentration -> AQI by linear interpolation within its band.
+  function concToAqi(c, breaks){
+    if (!isNum(c) || c < 0) return null;
+    for (var i = 1; i < breaks.length; i++){
+      if (c <= breaks[i]){
+        var lo = i === 1 ? 0 : breaks[i-1], aLo = i === 1 ? 0 : AQI_BREAKS[i-1] + 1;
+        return Math.round(aLo + (AQI_BREAKS[i] - aLo) * (c - lo) / (breaks[i] - lo));
+      }
+    }
+    return 500;
+  }
+  // Position 0..1 along a scale where every band gets an equal share.
+  function bandPos(v, breaks){
+    if (!isNum(v)) return 0;
+    var n = breaks.length - 1;
+    for (var i = 1; i <= n; i++){
+      if (v <= breaks[i]) return ((i - 1) + (v - breaks[i-1]) / (breaks[i] - breaks[i-1])) / n;
+    }
+    return 1;
+  }
+  function setPill(el, band){
+    el.querySelector(".sw").style.background = band === null ? "var(--border-strong)" : bandColor(band);
+    el.querySelector(".sw + span").textContent = band === null ? "No reading" : AQI_BANDS[band].name;
+  }
+  function airFreshness(a){
+    var mins = Math.round((a.updatedSecondsAgo||0)/60);
+    return a.online
+      ? "Live from " + (state.airHost || "sensor") + " · updated " + (mins < 1 ? "just now" : mins + " min ago")
+      : "Sensor offline (" + (state.airHost || "not configured") + ")";
+  }
+
   function renderAirCard(){
     var a = state.air || {};
-    var online = !!a.online;
-    var grid = document.getElementById("air-grid");
-    grid.innerHTML = "";
-    var items = [
-      { name:"PM2.5", val: isNum(a.pm2_5) ? a.pm2_5 + " µg/m³" : "--" },
-      { name:"PM10", val: isNum(a.pm10) ? a.pm10 + " µg/m³" : "--" },
-      { name:"AQI", val: isNum(a.aqi) ? a.aqi : "--" }
+    var have = !!a.online && isNum(a.aqi) && a.aqi >= 0;
+    var band = have ? aqiBand(a.aqi) : null;
+    document.getElementById("air-sum-aqi").textContent = have ? a.aqi : "--";
+    setPill(document.getElementById("air-sum-pill"), band);
+    document.getElementById("air-sum-pm").textContent = a.online
+      ? "PM2.5 " + a.pm2_5 + " · PM10 " + a.pm10 + " µg/m³"
+      : "No live reading";
+    var cap = document.getElementById("air-caption");
+    cap.textContent = airFreshness(a);
+    cap.style.color = a.online ? "" : "#d64545";
+  }
+
+  function arcPath(cx, cy, r, fromDeg, toDeg){
+    // degrees clockwise from 12 o'clock
+    function pt(d){ var t = (d - 90) * Math.PI / 180; return [cx + r*Math.cos(t), cy + r*Math.sin(t)]; }
+    var a = pt(fromDeg), b = pt(toDeg), large = (toDeg - fromDeg) > 180 ? 1 : 0;
+    return "M" + a[0].toFixed(2) + " " + a[1].toFixed(2) + " A" + r + " " + r + " 0 " + large + " 1 " + b[0].toFixed(2) + " " + b[1].toFixed(2);
+  }
+
+  function renderAirTab(){
+    var a = state.air || {};
+    var have = !!a.online && isNum(a.aqi) && a.aqi >= 0;
+    var band = have ? aqiBand(a.aqi) : null;
+
+    // Gauge: 270 degrees, one equal slice per band, marker at the AQI.
+    var svg = document.getElementById("aqi-gauge");
+    var html = "", start = -135, slice = 45, r = 84;
+    for (var i = 0; i < 6; i++){
+      var from = start + slice*i + (i ? 1.5 : 0), to = start + slice*(i+1) - (i < 5 ? 1.5 : 0);
+      html += '<path d="'+arcPath(100,100,r,from,to)+'" fill="none" stroke-width="14" stroke-linecap="'+(i===0||i===5?"round":"butt")+'" stroke="'+(have ? bandColor(i) : "var(--border-strong)")+'" opacity="'+(have && i !== band ? .55 : 1)+'"/>';
+    }
+    if (have){
+      var deg = start + 270 * bandPos(a.aqi, AQI_BREAKS);
+      var t = (deg - 90) * Math.PI / 180, mx = 100 + r*Math.cos(t), my = 100 + r*Math.sin(t);
+      html += '<circle cx="'+mx.toFixed(2)+'" cy="'+my.toFixed(2)+'" r="11" fill="var(--surface)" stroke="var(--text)" stroke-width="3"/>' +
+              '<circle cx="'+mx.toFixed(2)+'" cy="'+my.toFixed(2)+'" r="4.5" fill="'+bandColor(band)+'"/>';
+    }
+    svg.innerHTML = html;
+    document.getElementById("aqi-num").textContent = have ? a.aqi : "--";
+    document.getElementById("aqi-gauge-wrap").setAttribute("aria-label",
+      have ? "Air quality index " + a.aqi + ", " + AQI_BANDS[band].name : "Air quality index unavailable");
+    setPill(document.getElementById("aqi-pill"), band);
+    document.getElementById("aqi-headline").textContent = have ? AQI_BANDS[band].headline : (a.online ? "Sensor warming up…" : "Air sensor is offline");
+    document.getElementById("aqi-advice").textContent = have ? AQI_BANDS[band].advice
+      : (a.online ? "The first reading usually arrives within a minute." : "Check that the air quality node is powered and on WiFi, and that its address in Settings is right.");
+    var meta = document.getElementById("aqi-meta");
+    meta.textContent = airFreshness(a) + (have ? " · score based on PM2.5" : "");
+    meta.classList.toggle("off", !a.online);
+
+    // Per-pollutant cards
+    var pm10Aqi = concToAqi(a.pm10, PM10_BREAKS);
+    var cards = [
+      { key:"pm2_5", name:"PM2.5", sub:"Fine particles", val:a.pm2_5, aqi: have ? a.aqi : concToAqi(a.pm2_5, PM25_BREAKS), breaks:PM25_BREAKS,
+        ticks:["0","12","35","55","150","250"],
+        desc:"Particles smaller than 2.5 microns, from smoke, cooking, exhaust and wildfires. They're small enough to reach deep into the lungs, which is why the AQI is based on them." },
+      { key:"pm10", name:"PM10", sub:"Coarse particles", val:a.pm10, aqi:pm10Aqi, breaks:PM10_BREAKS,
+        ticks:["0","54","154","254","354","424"],
+        desc:"Particles smaller than 10 microns, such as dust, pollen and mold. They mostly irritate the eyes, nose and throat. This number includes the PM2.5 particles too." },
+      { key:"pm1_0", name:"PM1.0", sub:"Ultrafine particles", val:a.pm1_0, aqi:null, breaks:null,
+        desc:"The very smallest particles, mostly from burning things (candles, gas stoves, smoke). There's no official EPA scale for them. They're part of the PM2.5 count, so they usually rise and fall with it." }
     ];
-    items.forEach(function(it){
+    var grid = document.getElementById("pm-grid");
+    grid.innerHTML = "";
+    cards.forEach(function(c){
+      var live = !!a.online && isNum(c.val);
+      var b = (live && c.aqi !== null) ? aqiBand(c.aqi) : null;
       var el = document.createElement("div");
-      el.className = "stat";
-      el.innerHTML = '<div class="head"><span class="label">'+it.name+'</span></div><div class="value">'+it.val+'</div>';
+      el.className = "pm";
+      var h = '<div class="top"><span class="name">'+c.name+' · <span>'+c.sub+'</span></span></div>' +
+              '<div class="value">'+(live ? c.val : "--")+'<span class="unit">µg/m³</span></div>';
+      if (c.breaks){
+        h += '<span class="band-pill"><span class="sw" style="background:'+(b===null?"var(--border-strong)":bandColor(b))+'"></span><span>'+
+             (b===null ? "No reading" : AQI_BANDS[b].short + " · AQI " + c.aqi)+'</span></span>';
+        var bars = "";
+        for (var i = 0; i < 6; i++) bars += '<i style="background:'+bandColor(i)+';opacity:'+(b===null||b===i?1:.45)+'"></i>';
+        var ticks = c.ticks.map(function(t, i){ return '<span style="left:'+(i/6*100).toFixed(2)+'%">'+t+'</span>'; }).join("");
+        h += '<div class="scale" aria-hidden="true"><div class="bar">'+bars+'</div>' +
+             (live ? '<span class="mark" style="left:'+(bandPos(c.val, c.breaks)*100).toFixed(2)+'%"></span>' : '') +
+             '<div class="ticks">'+ticks+'</div></div>';
+      } else if (live && isNum(a.pm2_5) && a.pm2_5 > 0){
+        h += '<span class="band-pill"><span class="sw" style="background:var(--series-pm25)"></span><span>'+Math.min(100, Math.round(c.val / a.pm2_5 * 100))+'% of the PM2.5 reading</span></span>';
+      }
+      h += '<p>'+c.desc+'</p>';
+      el.innerHTML = h;
       grid.appendChild(el);
     });
-    var cap = document.getElementById("air-caption");
-    var mins = Math.round((a.updatedSecondsAgo||0)/60);
-    var freshness = online
-      ? "Live via " + (state.airHost || "sensor") + " · updated " + (mins < 1 ? "just now" : mins + " min ago")
-      : "Sensor offline (" + (state.airHost || "not configured") + ")";
-    cap.textContent = (online && a.aqiCategory) ? freshness + " · " + a.aqiCategory : freshness;
-    cap.style.color = online ? "" : "#d64545";
+
+    // Reference table, with the current level highlighted
+    var body = document.getElementById("aqi-table-body");
+    body.innerHTML = AQI_BANDS.map(function(bd, i){
+      var lo = i === 0 ? 0 : AQI_BANDS[i-1].max + 1;
+      return '<tr'+(i===band?' class="now"':'')+'><td><span class="lvl"><i style="background:'+bandColor(i)+'"></i>'+bd.name+
+             (i===band?' <span class="now-tag">NOW</span>':'')+'</span></td>' +
+             '<td class="n">'+lo+(i===5?"+":"–"+bd.max)+'</td><td class="n">'+bd.pm25+'</td><td class="n hide-sm">'+bd.pm10+'</td><td>'+bd.todo+'</td></tr>';
+    }).join("");
+
+    renderAirChart();
+  }
+
+  // ---------- air history chart ----------
+  var airHistory = null;   // { stepSeconds, lastSampleSecondsAgo, pm2_5:[], pm10:[] }
+  var airHistoryAt = 0;    // Date.now() when fetched
+  var chartHours = 24;
+
+  function mockHistory(){
+    var n = 288, p25 = [], p10 = [];
+    for (var i = 0; i < n; i++){
+      var base = 7 + 4*Math.sin(i/40) + (i > 200 && i < 214 ? 26*Math.sin((i-200)/14*Math.PI) : 0);
+      p25.push(i > 150 && i < 156 ? null : Math.max(1, Math.round(base + Math.random()*2)));
+      p10.push(p25[i] === null ? null : Math.round(p25[i]*1.35 + Math.random()*3));
+    }
+    return { stepSeconds:300, lastSampleSecondsAgo:120, pm2_5:p25, pm10:p10 };
+  }
+
+  function loadAirHistory(){
+    if (state && state.demo){ if (!airHistory){ airHistory = mockHistory(); airHistoryAt = Date.now(); } renderAirChart(); return; }
+    fetch("/api/air/history").then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(d){ airHistory = d; airHistoryAt = Date.now(); renderAirChart(); })
+      .catch(function(){});
+  }
+
+  function niceMax(v){
+    var steps = [20, 40, 60, 80, 100, 150, 200, 300, 400, 500, 750, 1000];
+    for (var i = 0; i < steps.length; i++) if (v <= steps[i]) return steps[i];
+    return Math.ceil(v/500)*500;
+  }
+
+  function fmtClock(d){
+    var h = d.getHours(), m = d.getMinutes();
+    return (h % 12 || 12) + ":" + String(m).padStart(2,"0") + (h < 12 ? "a" : "p");
+  }
+
+  function renderAirChart(){
+    var wrap = document.getElementById("chart-wrap");
+    var svg = document.getElementById("air-chart");
+    var tip = document.getElementById("chart-tip");
+    if (!wrap || document.getElementById("tab-air").hidden) return;
+    tip.classList.remove("show");
+    var old = wrap.querySelector(".chart-empty"); if (old) old.remove();
+
+    var h = airHistory, step = h ? h.stepSeconds || 300 : 300;
+    var want = Math.round(chartHours * 3600 / step);
+    var p25 = h ? h.pm2_5.slice(-want) : [], p10 = h ? h.pm10.slice(-want) : [];
+    var n = p25.length;
+    var valid = p25.filter(isNum).length;
+    if (valid < 2){
+      svg.style.display = "none";
+      var e = document.createElement("div");
+      e.className = "chart-empty";
+      var wait = h ? Math.max(1, Math.ceil((step - (h.lastSampleSecondsAgo||0)) / 60)) : 5;
+      e.textContent = "Collecting history. The station saves a 5-minute average every 5 minutes, so the chart fills in as it runs (next point in about " + wait + " min).";
+      wrap.appendChild(e);
+      return;
+    }
+    svg.style.display = "";
+
+    var W = Math.max(280, wrap.clientWidth), H = 240;
+    var m = { l:34, r:52, t:12, b:26 };
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var pw = W - m.l - m.r, ph = H - m.t - m.b;
+    var maxV = 0;
+    for (var i = 0; i < n; i++){ if (isNum(p25[i])) maxV = Math.max(maxV, p25[i]); if (isNum(p10[i])) maxV = Math.max(maxV, p10[i]); }
+    var yMax = niceMax(Math.max(maxV * 1.1, 40));
+    // Newest point sits at the right edge; the x-axis always spans the chosen range.
+    var slots = want;
+    function x(i){ return m.l + pw * ((slots - n + i) / (slots - 1)); }
+    function y(v){ return m.t + ph * (1 - v / yMax); }
+    var endTime = airHistoryAt - (h.lastSampleSecondsAgo||0) * 1000;
+    function timeAt(i){ return new Date(endTime - (n - 1 - i) * step * 1000); }
+
+    var out = "";
+    // Horizontal grid + y labels
+    for (var k = 0; k <= 4; k++){
+      var v = yMax * k / 4, yy = y(v).toFixed(1);
+      out += '<line class="grid-line" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+yy+'" y2="'+yy+'"/>';
+      out += '<g class="axis"><text x="'+(m.l-6)+'" y="'+(+yy+3.5)+'" text-anchor="end">'+Math.round(v)+'</text></g>';
+    }
+    // PM2.5 threshold guides
+    [[12,"Good"],[35.4,"Moderate"]].forEach(function(g){
+      if (g[0] >= yMax) return;
+      var gy = y(g[0]).toFixed(1);
+      out += '<line class="guide" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+gy+'" y2="'+gy+'"/>';
+      out += '<text class="guide-label" x="'+(W-m.r-4)+'" y="'+(gy-4)+'" text-anchor="end" paint-order="stroke" stroke="var(--surface)" stroke-width="3">PM2.5 '+g[1]+' limit</text>';
+    });
+    // X ticks: every 1h (6h view) or 4h (24h view), on the hour
+    var tickH = chartHours <= 6 ? 1 : 4;
+    var tStart = timeAt(0).getTime() - (slots - n) * step * 1000, tEnd = endTime;
+    var t0 = new Date(tStart); t0.setMinutes(0,0,0);
+    for (var t = t0.getTime() + 3600000; t <= tEnd; t += 3600000){
+      var d = new Date(t);
+      if (d.getHours() % tickH) continue;
+      var tx = m.l + pw * (t - tStart) / (tEnd - tStart);
+      if (tx < m.l + 12 || tx > W - m.r - 12) continue;
+      out += '<g class="axis"><text x="'+tx.toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">'+((d.getHours()%12)||12)+(d.getHours()<12?"a":"p")+'</text></g>';
+    }
+    // Lines (gaps where the sensor was offline)
+    function path(arr){
+      var d = "", pen = false;
+      for (var i = 0; i < n; i++){
+        if (!isNum(arr[i])){ pen = false; continue; }
+        d += (pen ? "L" : "M") + x(i).toFixed(1) + " " + y(arr[i]).toFixed(1);
+        pen = true;
+      }
+      return d;
+    }
+    out += '<path d="'+path(p10)+'" fill="none" stroke="var(--series-pm10)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    out += '<path d="'+path(p25)+'" fill="none" stroke="var(--series-pm25)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    // Direct labels at the latest valid point of each series, nudged apart if they collide
+    function lastIdx(arr){ for (var i = n-1; i >= 0; i--) if (isNum(arr[i])) return i; return -1; }
+    var l25 = lastIdx(p25), l10 = lastIdx(p10);
+    var y25 = l25 >= 0 ? y(p25[l25]) : null, y10 = l10 >= 0 ? y(p10[l10]) : null;
+    if (y25 !== null && y10 !== null && Math.abs(y25 - y10) < 13){
+      var mid = (y25 + y10) / 2;
+      if (p10[l10] >= p25[l25]){ y10 = mid - 7; y25 = mid + 7; } else { y10 = mid + 7; y25 = mid - 7; }
+    }
+    if (y10 !== null) out += '<text class="direct" x="'+(W-m.r+6)+'" y="'+(y10+4).toFixed(1)+'">PM10</text>';
+    if (y25 !== null) out += '<text class="direct" x="'+(W-m.r+6)+'" y="'+(y25+4).toFixed(1)+'">PM2.5</text>';
+    // Hover layer
+    out += '<line id="xhair" x1="0" x2="0" y1="'+m.t+'" y2="'+(H-m.b)+'" stroke="var(--text-faint)" stroke-width="1" visibility="hidden"/>';
+    out += '<circle id="dot25" r="4.5" fill="var(--series-pm25)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>';
+    out += '<circle id="dot10" r="4.5" fill="var(--series-pm10)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>';
+    out += '<rect id="hit" x="'+m.l+'" y="0" width="'+pw+'" height="'+H+'" fill="transparent"/>';
+    svg.innerHTML = out;
+
+    var xh = svg.querySelector("#xhair"), d25 = svg.querySelector("#dot25"), d10 = svg.querySelector("#dot10");
+    function show(clientX){
+      var box = svg.getBoundingClientRect();
+      var px = (clientX - box.left) * (W / box.width);
+      var i = Math.round((px - m.l) / pw * (slots - 1)) - (slots - n);
+      i = Math.max(0, Math.min(n - 1, i));
+      var cx = x(i);
+      xh.setAttribute("x1", cx); xh.setAttribute("x2", cx); xh.setAttribute("visibility", "visible");
+      [[d25, p25[i]], [d10, p10[i]]].forEach(function(p){
+        if (isNum(p[1])){ p[0].setAttribute("cx", cx); p[0].setAttribute("cy", y(p[1])); p[0].setAttribute("visibility", "visible"); }
+        else p[0].setAttribute("visibility", "hidden");
+      });
+      tip.innerHTML = fmtClock(timeAt(i)) + (isNum(p25[i])
+        ? '<br><span class="k" style="background:var(--series-pm25)"></span>PM2.5 <b>'+p25[i]+'</b> · '+AQI_BANDS[aqiBand(concToAqi(p25[i], PM25_BREAKS))].short +
+          '<br><span class="k" style="background:var(--series-pm10)"></span>PM10 <b>'+p10[i]+'</b> µg/m³'
+        : '<br>Sensor offline');
+      var top = Math.min(isNum(p25[i]) ? y(p25[i]) : H, isNum(p10[i]) ? y(p10[i]) : H);
+      var left = Math.max(70, Math.min(box.width - 70, cx * box.width / W));
+      tip.style.left = left + "px";
+      tip.style.top = Math.max(56, (top * box.height / H) - 10) + "px";
+      tip.classList.add("show");
+    }
+    function hide(){ xh.setAttribute("visibility","hidden"); d25.setAttribute("visibility","hidden"); d10.setAttribute("visibility","hidden"); tip.classList.remove("show"); }
+    var hit = svg.querySelector("#hit");
+    hit.addEventListener("mousemove", function(e){ show(e.clientX); });
+    hit.addEventListener("mouseleave", hide);
+    hit.addEventListener("touchstart", function(e){ show(e.touches[0].clientX); }, { passive:true });
+    hit.addEventListener("touchmove", function(e){ show(e.touches[0].clientX); }, { passive:true });
+    hit.addEventListener("touchend", hide);
   }
 
   function renderStatGrid(w){
@@ -817,7 +1298,7 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
   function renderNotes(){
     var list = document.getElementById("note-list");
     list.innerHTML = "";
-    var notes = state.screens.slice(4);
+    var notes = state.screens.slice(FIXED_SCREENS);
     if (!notes.length){
       list.innerHTML = '<p class="empty">No notes yet — add one below and it\'ll cycle on the station.</p>';
       return;
@@ -828,7 +1309,7 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
       row.innerHTML =
         '<span class="idx">'+String(i+1).padStart(2,"0")+'</span>' +
         '<span class="txt"></span>' +
-        '<button class="icon-btn" data-goto="'+(i+4)+'" title="Show on station" aria-label="Show on station"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>' +
+        '<button class="icon-btn" data-goto="'+(i+FIXED_SCREENS)+'" title="Show on station" aria-label="Show on station"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>' +
         '<button class="icon-btn" data-del="'+i+'" title="Delete" aria-label="Delete note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
       row.querySelector(".txt").textContent = text;
       list.appendChild(row);
@@ -865,15 +1346,30 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
   }
 
   // ---------- wiring ----------
-  document.querySelectorAll("nav.tabs button").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      document.querySelectorAll("nav.tabs button").forEach(function(b){ b.classList.remove("active"); b.setAttribute("aria-selected","false"); });
-      btn.classList.add("active"); btn.setAttribute("aria-selected","true");
-      ["overview","settings","notes","power"].forEach(function(id){
-        document.getElementById("tab-"+id).hidden = (id !== btn.dataset.tab);
-      });
+  function showTab(tab){
+    document.querySelectorAll("nav.tabs button").forEach(function(b){
+      var on = b.dataset.tab === tab;
+      b.classList.toggle("active", on); b.setAttribute("aria-selected", on ? "true" : "false");
     });
+    ["overview","air","settings","notes","power"].forEach(function(id){
+      document.getElementById("tab-"+id).hidden = (id !== tab);
+    });
+    if (tab === "air") loadAirHistory(); // also redraws the chart now that it has a width
+  }
+  document.querySelectorAll("nav.tabs button").forEach(function(btn){
+    btn.addEventListener("click", function(){ showTab(btn.dataset.tab); });
   });
+  document.getElementById("air-details-btn").addEventListener("click", function(){
+    showTab("air"); window.scrollTo({ top:0, behavior:"smooth" });
+  });
+  document.getElementById("range-seg").addEventListener("click", function(e){
+    var b = e.target.closest("button"); if (!b) return;
+    chartHours = parseInt(b.dataset.hours, 10);
+    document.querySelectorAll("#range-seg button").forEach(function(x){ x.classList.toggle("active", x === b); });
+    renderAirChart();
+  });
+  var resizeT;
+  window.addEventListener("resize", function(){ clearTimeout(resizeT); resizeT = setTimeout(renderAirChart, 120); });
 
   document.getElementById("refresh-btn").addEventListener("click", refreshInPlace);
 
@@ -952,7 +1448,7 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
     var go = e.target.closest("[data-goto]");
     if (del){
       var i = parseInt(del.dataset.del, 10);
-      if (state.demo){ state.screens.splice(i+4,1); render(); return; }
+      if (state.demo){ state.screens.splice(i+FIXED_SCREENS,1); render(); return; }
       apiPost("/api/notes/delete", { index:i }).then(function(d){ state = d; render(); toast("Note deleted"); });
     } else if (go){
       var page = parseInt(go.dataset.goto, 10);
@@ -1003,6 +1499,10 @@ static const char PAGE_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
   setInterval(function(){
     if (document.visibilityState === "visible") load();
   }, 20000);
+  // History only changes every 5 minutes; refresh it while the Air tab is open.
+  setInterval(function(){
+    if (document.visibilityState === "visible" && !document.getElementById("tab-air").hidden) loadAirHistory();
+  }, 60000);
 
 })();
 </script>

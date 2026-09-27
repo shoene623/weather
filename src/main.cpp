@@ -270,6 +270,40 @@ AirQualityReading airQuality;
 bool haveAirQuality = false;
 unsigned long lastAirFetchMs = 0;
 
+// ---- Air quality history (for the web dashboard's trend chart) ----
+// Each slot is the average of the ~1-minute polls over a 5-minute window,
+// so 288 slots = the last 24 hours. RAM-only: it starts empty after a reboot.
+static const int AIR_HISTORY_LEN = 288;
+static const unsigned long AIR_HISTORY_STEP_MS = 5UL * 60UL * 1000UL;
+static const uint16_t AIR_HISTORY_GAP = 0xFFFF; // window with no online readings
+uint16_t airHistPm25[AIR_HISTORY_LEN];
+uint16_t airHistPm10[AIR_HISTORY_LEN];
+int airHistCount = 0; // valid slots, up to AIR_HISTORY_LEN
+int airHistHead = 0;  // next slot to write (oldest slot once full)
+unsigned long airHistLastPushMs = 0;
+uint32_t airAccumPm25 = 0, airAccumPm10 = 0;
+uint16_t airAccumCount = 0;
+
+void accumulateAirSample() {
+  if (!haveAirQuality || !airQuality.online) return;
+  airAccumPm25 += airQuality.pm2_5;
+  airAccumPm10 += airQuality.pm10;
+  airAccumCount++;
+}
+
+// Closes the current 5-minute window into the ring buffer once it has elapsed.
+void tickAirHistory() {
+  if (millis() - airHistLastPushMs < AIR_HISTORY_STEP_MS) return;
+  airHistLastPushMs = millis();
+  bool any = airAccumCount > 0;
+  airHistPm25[airHistHead] = any ? (uint16_t)((airAccumPm25 + airAccumCount / 2) / airAccumCount) : AIR_HISTORY_GAP;
+  airHistPm10[airHistHead] = any ? (uint16_t)((airAccumPm10 + airAccumCount / 2) / airAccumCount) : AIR_HISTORY_GAP;
+  airHistHead = (airHistHead + 1) % AIR_HISTORY_LEN;
+  if (airHistCount < AIR_HISTORY_LEN) airHistCount++;
+  airAccumPm25 = airAccumPm10 = 0;
+  airAccumCount = 0;
+}
+
 // ---- Notes feature ----
 static const size_t MAX_NOTES = 10;
 static const size_t MAX_NOTE_LEN = 80;
@@ -1348,77 +1382,196 @@ void renderLocal(const LocalSensorReading& local, bool sensorOnline, const Weath
   }
 }
 
-// AQI color bands, matching the standard EPA/AirNow PM2.5 AQI palette
-// (Good/Moderate/USG/Unhealthy/Very Unhealthy/Hazardous) that most consumer
-// air quality displays use.
-uint16_t aqiColor(int aqi) {
-  if (aqi < 0) return INK_DIM;
-  if (aqi <= 50) return RGB565(56, 168, 76);
-  if (aqi <= 100) return RGB565(220, 190, 40);
-  if (aqi <= 150) return RGB565(230, 140, 40);
-  if (aqi <= 200) return RGB565(210, 60, 55);
-  if (aqi <= 300) return RGB565(140, 60, 150);
-  return RGB565(120, 30, 40);
+// ---- Air quality screen ----
+// The six US EPA AQI bands (0-50 Good ... 301+ Hazardous), shared by the
+// gauge colors, labels and advice so they can never disagree.
+static const int AQI_BAND_COUNT = 6;
+static const int AQI_BAND_MAX[AQI_BAND_COUNT] = { 50, 100, 150, 200, 300, 500 };
+
+int aqiBand(int aqi) {
+  for (int i = 0; i < AQI_BAND_COUNT; i++) {
+    if (aqi <= AQI_BAND_MAX[i]) return i;
+  }
+  return AQI_BAND_COUNT - 1;
 }
 
-// PMS5003 particulate matter screen: PM2.5/PM10 (atmospheric concentration)
-// and the derived US EPA PM2.5 AQI, relayed by the sensor node's /data.
+// Standard EPA/AirNow band colors, used for the gauge segments.
+uint16_t aqiBandFill(int band) {
+  static const uint16_t c[AQI_BAND_COUNT] = {
+    RGB565(0, 190, 70),    // Good
+    RGB565(240, 200, 0),   // Moderate
+    RGB565(250, 126, 0),   // Unhealthy for sensitive groups
+    RGB565(225, 30, 40),   // Unhealthy
+    RGB565(143, 63, 151),  // Very unhealthy
+    RGB565(126, 0, 35),    // Hazardous
+  };
+  return c[constrain(band, 0, AQI_BAND_COUNT - 1)];
+}
+
+// Darker versions of the band colors for text on the light card: the pure
+// EPA yellow/green are unreadable as text on near-white.
+uint16_t aqiBandInk(int band) {
+  static const uint16_t c[AQI_BAND_COUNT] = {
+    RGB565(20, 130, 60),
+    RGB565(160, 118, 0),
+    RGB565(200, 90, 0),
+    RGB565(195, 25, 35),
+    RGB565(120, 45, 135),
+    RGB565(110, 0, 30),
+  };
+  return c[constrain(band, 0, AQI_BAND_COUNT - 1)];
+}
+
+const char* aqiBandLabel(int band) {
+  static const char* l[AQI_BAND_COUNT] = {
+    "Good", "Moderate", "Unhealthy (sensitive)", "Unhealthy", "Very unhealthy", "Hazardous"
+  };
+  return l[constrain(band, 0, AQI_BAND_COUNT - 1)];
+}
+
+// One short line (fits the round face at 9pt) on what the band means for you.
+const char* aqiBandAdvice(int band) {
+  static const char* a[AQI_BAND_COUNT] = {
+    "Great air", "Fine for most", "Limit if sensitive", "Limit time outside", "Avoid outdoors", "Stay indoors"
+  };
+  return a[constrain(band, 0, AQI_BAND_COUNT - 1)];
+}
+
+// Gauge geometry: a 270-degree ring open at the bottom. Angles are degrees
+// clockwise from 12 o'clock, so the ring runs from -135 (lower left) to +135
+// (lower right). Each band gets an equal 45-degree slice, the way most AQI
+// dials are drawn, so the narrow low bands stay readable.
+static const float GAUGE_START_DEG = -135.0f;
+static const float GAUGE_BAND_DEG = 45.0f;
+static const int16_t GAUGE_R_OUT = 112, GAUGE_R_IN = 98;
+
+void gaugePoint(float deg, int16_t r, int16_t& x, int16_t& y) {
+  float rad = deg * PI / 180.0f;
+  x = 120 + (int16_t)lroundf(sinf(rad) * r);
+  y = 120 - (int16_t)lroundf(cosf(rad) * r);
+}
+
+// Filled ring segment between two angles, built from thin quads (Arduino_GFX
+// has fillArc, but its angle convention is undocumented; this is explicit).
+void fillRingSegment(float fromDeg, float toDeg, int16_t rIn, int16_t rOut, uint16_t color) {
+  const float step = 3.0f;
+  for (float a = fromDeg; a < toDeg; a += step) {
+    float b = min(a + step + 0.6f, toDeg); // slight overlap so no seams show
+    int16_t x0, y0, x1, y1, x2, y2, x3, y3;
+    gaugePoint(a, rIn, x0, y0);
+    gaugePoint(a, rOut, x1, y1);
+    gaugePoint(b, rOut, x2, y2);
+    gaugePoint(b, rIn, x3, y3);
+    gfx->fillTriangle(x0, y0, x1, y1, x2, y2, color);
+    gfx->fillTriangle(x0, y0, x2, y2, x3, y3, color);
+  }
+}
+
+// Where on the gauge a given AQI sits (linear within its band's slice).
+float aqiToGaugeDeg(int aqi) {
+  aqi = constrain(aqi, 0, 500);
+  int band = aqiBand(aqi);
+  int lo = band == 0 ? 0 : AQI_BAND_MAX[band - 1];
+  int hi = AQI_BAND_MAX[band];
+  float t = (float)(aqi - lo) / (float)(hi - lo);
+  return GAUGE_START_DEG + GAUGE_BAND_DEG * (band + t);
+}
+
+// US EPA AQI for PM10 (24h breakpoints, same table as the node's library),
+// so the PM10 dot can be colored by its own band like PM2.5's.
+int pm10Aqi(int c) {
+  static const int bpLo[] = { 0, 55, 155, 255, 355, 425, 505 };
+  static const int bpHi[] = { 54, 154, 254, 354, 424, 504, 604 };
+  static const int aLo[] = { 0, 51, 101, 151, 201, 301, 401 };
+  static const int aHi[] = { 50, 100, 150, 200, 300, 400, 500 };
+  if (c < 0) return -1;
+  for (int i = 0; i < 7; i++) {
+    if (c <= bpHi[i]) {
+      return aLo[i] + (int)lroundf((float)(aHi[i] - aLo[i]) * (c - bpLo[i]) / (float)(bpHi[i] - bpLo[i]));
+    }
+  }
+  return 500;
+}
+
+// One PM readout in the gauge's bottom opening: value, then a label led by a
+// dot in the color of that pollutant's own AQI band.
+void drawPmReadout(int16_t cx, int value, const char* label, int band) {
+  char buf[8];
+  snprintf(buf, sizeof(buf), "%d", value);
+  gfx->setTextColor(INK, CARD_BG);
+  centerText(buf, cx, 176, 1, &FreeSansBold9pt7b);
+  gfx->setTextColor(INK_DIM, CARD_BG);
+  centerText(label, cx + 5, 196, 1, &FreeSans9pt7b);
+  int16_t x1, y1;
+  uint16_t w, h;
+  gfx->setFont(&FreeSans9pt7b);
+  gfx->getTextBounds(label, 0, 0, &x1, &y1, &w, &h);
+  gfx->fillCircle(cx + 5 - (int16_t)(w / 2) - 8, 196, 4, aqiBandFill(band));
+}
+
+// PMS5003 particulate screen: a color-banded AQI dial with the reading's
+// meaning in words, plus the raw PM2.5/PM10 concentrations (ug/m3).
 void renderAirQuality(const AirQualityReading& air, bool sensorOnline) {
-  const int16_t cardX = 28, cardY = 44, cardW = 184, cardH = 160;
-  drawForecastFrame("AIR", cardX, cardY, cardW, cardH);
-  const uint16_t chip = CARD_BG;
+  drawVerticalGradient(RGB565(214, 231, 245), RGB565(236, 244, 250));
+  gfx->drawCircle(120, 120, 118, RGB565_BLACK);
+  gfx->drawCircle(120, 120, 117, RGB565(150, 175, 200));
+
+  // Face inside the ring
+  gfx->fillCircle(120, 120, GAUGE_R_IN - 4, CARD_BG);
+
+  bool haveAqi = sensorOnline && air.aqi >= 0;
+  int band = haveAqi ? aqiBand(air.aqi) : 0;
+
+  // Band segments: full color when live, a muted track otherwise. Each
+  // segment after the first starts slightly late, leaving a thin gap.
+  for (int i = 0; i < AQI_BAND_COUNT; i++) {
+    float from = GAUGE_START_DEG + GAUGE_BAND_DEG * i;
+    uint16_t color = haveAqi ? aqiBandFill(i) : DIVIDER;
+    fillRingSegment(from + (i ? 1.2f : 0.0f), from + GAUGE_BAND_DEG, GAUGE_R_IN, GAUGE_R_OUT, color);
+  }
+  // Rounded ends
+  int16_t ex, ey;
+  const int16_t rMid = (GAUGE_R_IN + GAUGE_R_OUT) / 2, capR = (GAUGE_R_OUT - GAUGE_R_IN) / 2;
+  gaugePoint(GAUGE_START_DEG, rMid, ex, ey);
+  gfx->fillCircle(ex, ey, capR, haveAqi ? aqiBandFill(0) : DIVIDER);
+  gaugePoint(GAUGE_START_DEG + GAUGE_BAND_DEG * AQI_BAND_COUNT, rMid, ex, ey);
+  gfx->fillCircle(ex, ey, capR, haveAqi ? aqiBandFill(AQI_BAND_COUNT - 1) : DIVIDER);
+
+  gfx->setTextColor(INK_DIM, CARD_BG);
+  centerText("AIR QUALITY", 120, 50, 1, &FreeSansBold9pt7b);
 
   if (!sensorOnline) {
-    gfx->setTextColor(OFFLINE_RED, chip);
-    centerText("Sensor offline", 120, cardY + cardH / 2 - 10, 1, &FreeSans9pt7b);
-    gfx->setTextColor(INK_DIM, chip);
-    centerText(airQualityHost.c_str(), 120, cardY + cardH / 2 + 12, 1, &FreeSans9pt7b);
+    gfx->setTextColor(OFFLINE_RED, CARD_BG);
+    centerText("Sensor offline", 120, 108, 1, &FreeSansBold9pt7b);
+    gfx->setTextColor(INK_DIM, CARD_BG);
+    centerText(airQualityHost.c_str(), 120, 132, 1, &FreeSans9pt7b);
     return;
   }
 
-  char aqiText[8];
-  if (air.aqi < 0) snprintf(aqiText, sizeof(aqiText), "--");
-  else snprintf(aqiText, sizeof(aqiText), "%d", air.aqi);
-  gfx->setTextColor(aqiColor(air.aqi), chip);
-  centerText(aqiText, 120, cardY + 34, 1, &FreeSansBold24pt7b);
-
-  gfx->setTextColor(INK_DIM, chip);
-  centerText(air.aqiCategory.length() ? air.aqiCategory.c_str() : "AQI", 120, cardY + 56, 1, &FreeSans9pt7b);
-
-  gfx->drawFastHLine(cardX + 16, cardY + 70, cardW - 32, DIVIDER);
-
-  const int16_t valueY = cardY + 108, capY = cardY + 124;
-  int16_t cx1 = 120 - 44, cx2 = 120 + 44;
-
-  char pm25Text[8];
-  snprintf(pm25Text, sizeof(pm25Text), "%d", air.pm2_5);
-  gfx->setTextColor(INK, chip);
-  centerText(pm25Text, cx1, valueY, 1, &FreeSansBold9pt7b);
-  gfx->setTextColor(INK_DIM, chip);
-  centerText("PM2.5", cx1, capY, 1, &FreeSans9pt7b);
-
-  char pm10Text[8];
-  snprintf(pm10Text, sizeof(pm10Text), "%d", air.pm10);
-  gfx->setTextColor(INK, chip);
-  centerText(pm10Text, cx2, valueY, 1, &FreeSansBold9pt7b);
-  gfx->setTextColor(INK_DIM, chip);
-  centerText("PM10", cx2, capY, 1, &FreeSans9pt7b);
-
-  gfx->drawFastHLine(cardX + 16, cardY + 138, cardW - 32, DIVIDER);
-
-  char pm1Text[24];
-  snprintf(pm1Text, sizeof(pm1Text), "PM1.0: %d ug/m3", air.pm1_0);
-  gfx->setTextColor(INK_DIM, chip);
-  centerText(pm1Text, 120, cardY + 152, 1, &FreeSans9pt7b);
-
-  if (lastAirFetchMs > 0) {
-    unsigned long agoMin = (millis() - lastAirFetchMs) / 60000UL;
-    char upd[24];
-    snprintf(upd, sizeof(upd), agoMin < 1 ? "Updated just now" : "Updated %lum ago", agoMin);
-    uint16_t skyAtY = lerpColor565(bgTopColor, bgBottomColor, 213 / 239.0f);
-    gfx->setTextColor(RGB565_DARKGREY, skyAtY);
-    centerText(upd, 120, 213, 1, &FreeSans9pt7b);
+  // Marker: a white knob with a dark rim, sitting on the ring at the AQI.
+  if (haveAqi) {
+    int16_t mx, my;
+    gaugePoint(aqiToGaugeDeg(air.aqi), rMid, mx, my);
+    gfx->fillCircle(mx, my, capR + 4, INK);
+    gfx->fillCircle(mx, my, capR + 2, RGB565_WHITE);
+    gfx->fillCircle(mx, my, 3, aqiBandFill(band));
   }
+
+  char aqiText[8];
+  if (haveAqi) snprintf(aqiText, sizeof(aqiText), "%d", air.aqi);
+  else snprintf(aqiText, sizeof(aqiText), "--");
+  uint16_t ink = haveAqi ? aqiBandInk(band) : INK_DIM;
+  gfx->setTextColor(ink, CARD_BG);
+  centerText(aqiText, 120, 92, 1, &FreeSansBold24pt7b);
+  centerText(haveAqi ? aqiBandLabel(band) : "Warming up", 120, 124, 1, &FreeSansBold9pt7b);
+  if (haveAqi) {
+    gfx->setTextColor(INK_DIM, CARD_BG);
+    centerText(aqiBandAdvice(band), 120, 144, 1, &FreeSans9pt7b);
+  }
+
+  gfx->drawFastHLine(66, 158, 108, DIVIDER);
+  drawPmReadout(92, air.pm2_5, "PM2.5", band);
+  drawPmReadout(150, air.pm10, "PM10", aqiBand(pm10Aqi(air.pm10)));
 }
 
 void renderCurrentScreen() {
@@ -1543,6 +1696,25 @@ void handleRoot() {
 
 void handleApiStatus() {
   sendStatusJson();
+}
+
+// 5-minute PM averages for the dashboard's trend chart, oldest first; null
+// marks a window when the sensor was offline.
+void handleApiAirHistory() {
+  JsonDocument doc;
+  doc["stepSeconds"] = AIR_HISTORY_STEP_MS / 1000UL;
+  doc["lastSampleSecondsAgo"] = (millis() - airHistLastPushMs) / 1000UL;
+  JsonArray pm25 = doc["pm2_5"].to<JsonArray>();
+  JsonArray pm10 = doc["pm10"].to<JsonArray>();
+  int oldest = (airHistHead - airHistCount + AIR_HISTORY_LEN) % AIR_HISTORY_LEN;
+  for (int i = 0; i < airHistCount; i++) {
+    int idx = (oldest + i) % AIR_HISTORY_LEN;
+    if (airHistPm25[idx] == AIR_HISTORY_GAP) pm25.add(nullptr); else pm25.add(airHistPm25[idx]);
+    if (airHistPm10[idx] == AIR_HISTORY_GAP) pm10.add(nullptr); else pm10.add(airHistPm10[idx]);
+  }
+  String out;
+  serializeJson(doc, out);
+  server.send(200, "application/json", out);
 }
 
 void handleApiRefresh() {
@@ -1742,6 +1914,9 @@ void tickPowerSchedule() {
 
 void setup() {
   Serial.begin(115200);
+  // Serial is native USB (HWCDC): on a PC with no monitor open, the default
+  // TX timeout makes each print block and stalls loop()/the web server.
+  Serial.setTxTimeoutMs(0);
   delay(1000);
   Serial.println("Booting...");
 
@@ -1780,6 +1955,7 @@ void setup() {
 
     server.on("/", HTTP_GET, handleRoot);
     server.on("/api/status", HTTP_GET, handleApiStatus);
+    server.on("/api/air/history", HTTP_GET, handleApiAirHistory);
     server.on("/api/refresh", HTTP_POST, handleApiRefresh);
     server.on("/api/settings", HTTP_POST, handleApiSettings);
     server.on("/api/notes/add", HTTP_POST, handleApiNotesAdd);
@@ -1797,6 +1973,7 @@ void setup() {
   }
 
   lastScreenSwitchMs = millis();
+  airHistLastPushMs = millis(); // first history window closes 5 min after boot
   renderCurrentScreen();
   Serial.println("Setup complete");
 }
@@ -1834,8 +2011,10 @@ void loop() {
     if (millis() - lastAirFetchMs >= AIR_QUALITY_INTERVAL_MS || lastAirFetchMs == 0) {
       haveAirQuality = fetchAirQuality(airQualityHost, airQuality);
       lastAirFetchMs = millis();
+      accumulateAirSample();
       if (currentScreen == 4) needsRedraw = true;
     }
+    tickAirHistory();
 
     static unsigned long lastScheduleCheckMs = 0;
     if (millis() - lastScheduleCheckMs >= 15000UL) {
